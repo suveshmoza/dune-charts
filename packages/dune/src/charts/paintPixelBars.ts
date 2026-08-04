@@ -2,6 +2,7 @@ import { ensureDitherTileCache, type DitherTileCache } from './paintPixelWave';
 import type { PixelBarPlotLayout } from './pixelBarEngine';
 import {
   bandIndexFromCrestRow,
+  bandIndexFromCrestRowDither,
   ditherDensityForBand,
   ditherPairFromBands,
   sortDrawOrder,
@@ -47,7 +48,8 @@ export function paintPixelBars(
         const localX0 = seg.x - plotX;
 
         for (let row = 0; row < seg.cellCount; row += 1) {
-          const band = bandIndexFromCrestRow(row);
+          const band =
+            fill === 'dither' ? bandIndexFromCrestRowDither(row) : bandIndexFromCrestRow(row);
           const localY = seg.topY + row * pixel - plotY;
 
           for (let c = 0; c < cols; c += 1) {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   bandIndexFromCrestRow,
+  bandIndexFromCrestRowDither,
   bandsFromColor,
   bandsFromHue,
   buildBayerTile,
@@ -117,6 +118,20 @@ describe('bandIndexFromCrestRow', () => {
     expect(bandIndexFromCrestRow(9)).toBe(3);
     expect(bandIndexFromCrestRow(13)).toBe(3);
     expect(bandIndexFromCrestRow(14)).toBe(4);
+  });
+});
+
+describe('bandIndexFromCrestRowDither', () => {
+  it('uses wider row boundaries than solid bands', () => {
+    expect(bandIndexFromCrestRowDither(0)).toBe(0);
+    expect(bandIndexFromCrestRowDither(7)).toBe(0);
+    expect(bandIndexFromCrestRowDither(8)).toBe(1);
+    expect(bandIndexFromCrestRowDither(19)).toBe(1);
+    expect(bandIndexFromCrestRowDither(20)).toBe(2);
+    expect(bandIndexFromCrestRowDither(35)).toBe(2);
+    expect(bandIndexFromCrestRowDither(36)).toBe(3);
+    expect(bandIndexFromCrestRowDither(55)).toBe(3);
+    expect(bandIndexFromCrestRowDither(56)).toBe(4);
   });
 });
 

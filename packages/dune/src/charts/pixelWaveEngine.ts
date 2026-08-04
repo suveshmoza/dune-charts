@@ -318,6 +318,18 @@ export function bandIndexFromCrestRow(row: number): 0 | 1 | 2 | 3 | 4 {
   return 4;
 }
 
+/**
+ * Wider crest→depth steps for dither so each Bayer density holds longer
+ * (solid `bands` keep the tighter ribbon map above).
+ */
+export function bandIndexFromCrestRowDither(row: number): 0 | 1 | 2 | 3 | 4 {
+  if (row < 6) return 0;
+  if (row < 18) return 1;
+  if (row < 32) return 2;
+  if (row < 48) return 3;
+  return 4;
+}
+
 function snapDown(n: number, pixel: number) {
   return Math.floor(n / pixel) * pixel;
 }

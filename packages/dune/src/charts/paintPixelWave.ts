@@ -1,5 +1,6 @@
 import {
   bandIndexFromCrestRow,
+  bandIndexFromCrestRowDither,
   buildBayerTile,
   ditherDensityForBand,
   ditherPairFromBands,
@@ -93,7 +94,8 @@ export function paintPixelWave(
       const localX = col.x - plotX;
 
       for (let row = 0; row < cellCount; row += 1) {
-        const band = bandIndexFromCrestRow(row);
+        const band =
+          fill === 'dither' ? bandIndexFromCrestRowDither(row) : bandIndexFromCrestRow(row);
         const localY = topY + row * pixel - plotY;
 
         if (fill === 'dither' && ditherTiles != null) {
