@@ -1,4 +1,4 @@
-import { DuneAreaChart, type PixelWaveFill } from 'dune';
+import { DuneAreaChart, DuneBarChart, type PixelWaveFill } from 'dune';
 import { useMemo, useState, type ReactNode } from 'react';
 
 import { THROUGHPUT_KEYS, throughput, throughputConfig, type ThroughputRow } from './data';
@@ -153,20 +153,75 @@ export function ChartAreaExpand({ fill = 'bands', pixel = 4 }: ChartControls) {
         seriesProps={expandStackProps}
         chartProps={{ stackOffset: 'expand' }}
         yAxisProps={{
-          tickFormatter: (value: number) => `${Math.round(Number(value) * 100)}%`,
+          tickFormatter: (value: number) => `${Math.round(value * 100)}%`,
         }}
       />
     </ChartCard>
   );
 }
 
-/** Gallery of area chart variants for the dashboard. */
+/** Stacked pixel bars. */
+export function ChartBarStacked({ fill = 'bands', pixel = 4 }: ChartControls) {
+  const { data, rangeToggle } = useRangeData();
+
+  return (
+    <ChartCard
+      title="Stacked bars"
+      description="Pixel-block bars — same stack as the area ridge."
+      actions={rangeToggle}
+    >
+      <DuneBarChart<ThroughputRow>
+        data={data}
+        index="month"
+        categories={[...THROUGHPUT_KEYS]}
+        height={280}
+        title="Stacked bars"
+        description="Stacked spice throughput as pixel bars."
+        config={throughputConfig}
+        fill={fill}
+        pixel={pixel}
+        valueFormatter={(value) => String(value)}
+        seriesProps={stackProps}
+      />
+    </ChartCard>
+  );
+}
+
+/** Single-series pixel bar. */
+export function ChartBarSimple({ fill = 'bands', pixel = 4 }: ChartControls) {
+  const { data, rangeToggle } = useRangeData();
+
+  return (
+    <ChartCard
+      title="Simple bars"
+      description="One series — melange as pixel columns."
+      actions={rangeToggle}
+    >
+      <DuneBarChart<ThroughputRow>
+        data={data}
+        index="month"
+        categories={['melange']}
+        height={280}
+        title="Simple bars"
+        description="Single-series melange bar chart."
+        config={throughputConfig}
+        fill={fill}
+        pixel={pixel}
+        valueFormatter={(value) => String(value)}
+      />
+    </ChartCard>
+  );
+}
+
+/** Gallery of area + bar chart variants for the dashboard. */
 export function ChartAreaInteractive(props: ChartControls) {
   return (
     <div className="db-chart-gallery">
       <ChartAreaStacked {...props} />
       <ChartAreaSimple {...props} />
       <ChartAreaExpand {...props} />
+      <ChartBarStacked {...props} />
+      <ChartBarSimple {...props} />
     </div>
   );
 }

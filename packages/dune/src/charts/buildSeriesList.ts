@@ -1,5 +1,8 @@
-import type { DataKey, DuneCartesianChartProps } from '../types';
+import type { DataKey, DuneSeriesConfig } from '../types';
 import { bandsFromColor, type PixelWaveBands, type PixelWaveSeries } from './pixelWaveEngine';
+
+type SeriesStackProps = { stackId?: string | number };
+type ChartStackProps = { stackOffset?: string };
 
 /**
  * Build pixel-wave series from chart data, including stacked bases/tops
@@ -8,10 +11,10 @@ import { bandsFromColor, type PixelWaveBands, type PixelWaveSeries } from './pix
 export function buildSeriesList<T extends Record<string, unknown>>(
   data: readonly T[],
   categories: readonly DataKey<T>[],
-  config: DuneCartesianChartProps<T>['config'],
+  config: Partial<Record<DataKey<T>, DuneSeriesConfig>> | undefined,
   baseColors: readonly string[],
-  seriesProps: DuneCartesianChartProps<T>['seriesProps'],
-  chartProps: DuneCartesianChartProps<T>['chartProps'],
+  seriesProps: Partial<Record<DataKey<T>, SeriesStackProps>> | undefined,
+  chartProps: ChartStackProps | undefined,
 ): PixelWaveSeries[] {
   const expand = chartProps?.stackOffset === 'expand';
   const stackIds = categories.map((key) => seriesProps?.[key]?.stackId);

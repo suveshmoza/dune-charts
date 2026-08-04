@@ -24,4 +24,4 @@ Header toggles:
 - **Fill** — `bands` | `dither`
 - **Pixel** — cell size (`1` | `2` | `4` | `8`)
 
-Charts on the page: stacked multi-series, simple single-series, and 100% expand stack. All share the header fill/pixel settings.
+Charts on the page: stacked / simple / 100% expand areas, plus stacked and simple pixel bars. All share the header fill/pixel settings.

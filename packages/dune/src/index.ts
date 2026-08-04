@@ -23,11 +23,16 @@ export type {
   DataKey,
   DuneAreaChartPassThrough,
   DuneAreaSeriesPassThrough,
+  DuneBarChartPassThrough,
+  DuneBarChartProps,
+  DuneBarSeriesPassThrough,
   DuneCartesianChartProps,
   DuneSeriesConfig,
 } from './types';
 
 export { DuneAreaChart, type DuneAreaChartProps } from './charts/DuneAreaChart';
+
+export { DuneBarChart } from './charts/DuneBarChart';
 
 export {
   bandsFromColor,
