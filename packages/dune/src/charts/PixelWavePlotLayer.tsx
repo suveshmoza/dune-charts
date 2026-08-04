@@ -84,7 +84,11 @@ export function PixelWavePlotLayer({
     <g className="dune-pixel-wave-layer" pointerEvents="none" aria-hidden>
       <foreignObject x={plot.x} y={plot.y} width={plotW} height={plotH}>
         <div style={{ width: plotW, height: plotH, margin: 0 }}>
-          <canvas ref={canvasRef} style={{ display: 'block', width: plotW, height: plotH }} />
+          <canvas
+            ref={canvasRef}
+            aria-hidden="true"
+            style={{ display: 'block', width: plotW, height: plotH }}
+          />
         </div>
       </foreignObject>
     </g>

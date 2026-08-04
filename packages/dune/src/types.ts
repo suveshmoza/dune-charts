@@ -41,6 +41,8 @@ export type DuneCartesianChartProps<T> = {
   height?: DuneChartSize;
   title?: string;
   description?: string;
+  /** Empty-state copy when `data` is empty. Default: "No data to display". */
+  emptyMessage?: string;
   valueFormatter?: (value: number, key: DataKey<T>) => string;
   /** Extra props spread onto the underlying Recharts `AreaChart`. */
   chartProps?: DuneAreaChartPassThrough;
