@@ -4,6 +4,7 @@ import type {
   BarProps,
   LegendProps,
   LineProps,
+  PieProps,
   TooltipProps,
   XAxisProps,
   YAxisProps,
@@ -25,6 +26,7 @@ export type DuneSeriesConfig = {
 type RechartsAreaChart = typeof import('recharts').AreaChart;
 type RechartsBarChart = typeof import('recharts').BarChart;
 type RechartsLineChart = typeof import('recharts').LineChart;
+type RechartsPieChart = typeof import('recharts').PieChart;
 
 /** Pass-through AreaChart props; Dune owns `data` / `children`. */
 export type DuneAreaChartPassThrough = Omit<
@@ -61,6 +63,15 @@ export type DuneLineSeriesPassThrough = Omit<
   LineProps<unknown, unknown>,
   'dataKey' | 'data' | 'name'
 >;
+
+/** Pass-through PieChart props; Dune owns `data` / `children`. */
+export type DunePieChartPassThrough = Omit<
+  ComponentPropsWithoutRef<RechartsPieChart>,
+  'data' | 'children'
+>;
+
+/** Pass-through Pie props; Dune owns `data` / `dataKey` / `nameKey`. */
+export type DunePiePassThrough = Omit<PieProps<unknown, unknown>, 'data' | 'dataKey' | 'nameKey'>;
 
 /** Shared cartesian fields without fill-wave (`fill` is area/bar only). */
 type DuneCartesianBaseProps<T> = {
@@ -102,4 +113,29 @@ export type DuneBarChartProps<T> = DuneCartesianSharedProps<T> & {
 export type DuneLineChartProps<T> = DuneCartesianBaseProps<T> & {
   chartProps?: DuneLineChartPassThrough;
   seriesProps?: Partial<Record<DataKey<T>, DuneLineSeriesPassThrough>>;
+};
+
+export type DunePieChartProps<T extends Record<string, unknown>> = {
+  data: readonly T[];
+  /** Numeric slice size field (Recharts `Pie` `dataKey`). */
+  dataKey: DataKey<T>;
+  /** Slice label field (Recharts `Pie` `nameKey`). Default `"name"`. */
+  nameKey?: DataKey<T>;
+  /** Per-slice config keyed by slice name. */
+  config?: Partial<Record<string, DuneSeriesConfig>>;
+  /** Pixel fill style. `bands` (default) or Bayer `dither` mesh. */
+  fill?: PixelWaveFill;
+  /** Cell size in CSS pixels (default 4). Clamped to ≥ 1. */
+  pixel?: number;
+  className?: string;
+  height?: DuneChartSize;
+  title?: string;
+  description?: string;
+  emptyMessage?: string;
+  valueFormatter?: (value: number, name: string) => string;
+  chartProps?: DunePieChartPassThrough;
+  pieProps?: DunePiePassThrough;
+  tooltipProps?: Omit<TooltipProps, 'content'>;
+  legendProps?: LegendProps;
+  children?: ReactNode;
 };

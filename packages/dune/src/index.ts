@@ -30,6 +30,9 @@ export type {
   DuneLineChartPassThrough,
   DuneLineChartProps,
   DuneLineSeriesPassThrough,
+  DunePieChartPassThrough,
+  DunePieChartProps,
+  DunePiePassThrough,
   DuneSeriesConfig,
 } from './types';
 
@@ -38,6 +41,8 @@ export { DuneAreaChart, type DuneAreaChartProps } from './charts/DuneAreaChart';
 export { DuneBarChart } from './charts/DuneBarChart';
 
 export { DuneLineChart } from './charts/DuneLineChart';
+
+export { DunePieChart } from './charts/DunePieChart';
 
 export {
   bandsFromColor,

@@ -1,4 +1,4 @@
-import { DuneAreaChart, DuneBarChart, DuneLineChart, type PixelWaveFill } from 'dune';
+import { DuneAreaChart, DuneBarChart, DuneLineChart, DunePieChart, type PixelWaveFill } from 'dune';
 import { useMemo, useState, type ReactNode } from 'react';
 
 import { THROUGHPUT_KEYS, throughput, throughputConfig, type ThroughputRow } from './data';
@@ -263,7 +263,58 @@ export function ChartLineSimple({ pixel = 4 }: ChartControls) {
   );
 }
 
-/** Gallery of area + bar + line chart variants for the dashboard. */
+type ShareSlice = { name: string; value: number };
+
+const SHARE_SLICES: ShareSlice[] = [
+  { name: 'melange', value: 42 },
+  { name: 'water', value: 28 },
+  { name: 'thrift', value: 18 },
+  { name: 'wind', value: 8 },
+  { name: 'silica', value: 4 },
+];
+
+/** Pixel pie wedges. */
+export function ChartPieSimple({ fill = 'bands', pixel = 4 }: ChartControls) {
+  return (
+    <ChartCard title="Pixel pie" description="Chunky wedges — crest→depth bands from the rim.">
+      <DunePieChart<ShareSlice>
+        data={SHARE_SLICES}
+        dataKey="value"
+        nameKey="name"
+        height={280}
+        title="Pixel pie"
+        description="Share of spice throughput as a pixel pie."
+        config={throughputConfig}
+        fill={fill}
+        pixel={pixel}
+        valueFormatter={(value) => String(value)}
+      />
+    </ChartCard>
+  );
+}
+
+/** Pixel donut via pieProps.innerRadius. */
+export function ChartPieDonut({ fill = 'bands', pixel = 4 }: ChartControls) {
+  return (
+    <ChartCard title="Pixel donut" description="Same wedges with an inner hole.">
+      <DunePieChart<ShareSlice>
+        data={SHARE_SLICES}
+        dataKey="value"
+        nameKey="name"
+        height={280}
+        title="Pixel donut"
+        description="Donut share chart with pixel fill."
+        config={throughputConfig}
+        fill={fill}
+        pixel={pixel}
+        valueFormatter={(value) => String(value)}
+        pieProps={{ innerRadius: '45%', outerRadius: '80%' }}
+      />
+    </ChartCard>
+  );
+}
+
+/** Gallery of area + bar + line + pie chart variants for the dashboard. */
 export function ChartAreaInteractive(props: ChartControls) {
   return (
     <div className="db-chart-gallery">
@@ -274,6 +325,8 @@ export function ChartAreaInteractive(props: ChartControls) {
       <ChartBarSimple {...props} />
       <ChartLineMulti {...props} />
       <ChartLineSimple {...props} />
+      <ChartPieSimple {...props} />
+      <ChartPieDonut {...props} />
     </div>
   );
 }
