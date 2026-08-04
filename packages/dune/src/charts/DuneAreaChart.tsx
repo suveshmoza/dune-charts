@@ -116,7 +116,6 @@ export function DuneAreaChart<T extends Record<string, unknown>>({
   categories,
   index,
   config,
-  grain: _grain,
   fill = 'bands',
   pixel: pixelProp,
   className,

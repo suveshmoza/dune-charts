@@ -9,8 +9,6 @@ export {
   type DuneChartProviderProps,
 } from './provider/DuneChartProvider';
 
-export { DUNE_GRAINS, type DuneGrain } from './provider/duneGrain';
-
 export { DuneChartContainer, type DuneChartContainerProps } from './primitives/DuneChartContainer';
 
 export {

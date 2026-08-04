@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 
 import type { PixelWaveBands, PixelWaveFill } from './charts/pixelWaveEngine';
 import type { DuneChartSize } from './primitives/DuneChartContainer';
-import type { DuneGrain } from './provider/duneGrain';
 
 export type DataKey<T> = Extract<keyof T, string>;
 
@@ -19,7 +18,6 @@ export type DuneCartesianChartProps<T> = {
   categories: readonly DataKey<T>[];
   index: DataKey<T>;
   config?: Partial<Record<DataKey<T>, DuneSeriesConfig>>;
-  grain?: DuneGrain;
   /** Pixel-wave fill style. `bands` (default) or Bayer `dither` mesh. */
   fill?: PixelWaveFill;
   /** Cell size in CSS pixels (default 4). Clamped to ≥ 1. */

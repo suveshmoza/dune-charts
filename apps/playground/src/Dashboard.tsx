@@ -59,7 +59,7 @@ export default function Dashboard() {
   const toggleSidebar = () => setSidebarOpen((open) => !open);
 
   return (
-    <DuneChartProvider theme={theme} grain="subtle">
+    <DuneChartProvider theme={theme}>
       <div
         className={`db db--${theme}${sidebarOpen ? ' is-sidebar-open' : ' is-sidebar-collapsed'}`}
       >
