@@ -12,10 +12,11 @@ import {
 
 import { DuneChartContainer } from '../primitives/DuneChartContainer';
 import { useDuneTheme } from '../provider/DuneChartProvider';
-import type { DataKey, DuneCartesianChartProps } from '../types';
+import type { DuneCartesianChartProps } from '../types';
 import { usePrefersReducedMotion } from '../utils/reducedMotion';
 import { buildSeriesStyle, getSeriesVar, resolveSeriesBaseColors } from '../utils/series';
-import { bandsFromColor, type PixelWaveBands, type PixelWaveSeries } from './pixelWaveEngine';
+import { buildSeriesList } from './buildSeriesList';
+import type { PixelWaveBands } from './pixelWaveEngine';
 import { PixelWavePlotLayer } from './PixelWavePlotLayer';
 
 export type DuneAreaChartProps<T> = DuneCartesianChartProps<T>;
@@ -32,83 +33,6 @@ function clampPixel(pixel: number | undefined): number {
 function toCssSize(value: number | string | undefined): string | undefined {
   if (value == null) return undefined;
   return typeof value === 'number' ? `${value}px` : value;
-}
-
-function toSeriesList<T extends Record<string, unknown>>(
-  data: readonly T[],
-  categories: readonly DataKey<T>[],
-  config: DuneCartesianChartProps<T>['config'],
-  baseColors: readonly string[],
-  seriesProps: DuneCartesianChartProps<T>['seriesProps'],
-  chartProps: DuneCartesianChartProps<T>['chartProps'],
-): PixelWaveSeries[] {
-  const expand = chartProps?.stackOffset === 'expand';
-  const stackIds = categories.map((key) => seriesProps?.[key]?.stackId);
-  const isStacked = stackIds.some((id) => id != null && id !== false);
-
-  const stackKey = (index: number): string => {
-    const raw = stackIds[index];
-    if (typeof raw === 'string' || typeof raw === 'number' || typeof raw === 'boolean') {
-      return String(raw);
-    }
-    return String(index);
-  };
-
-  const rawByCategory = categories.map((key) =>
-    data.map((row) => {
-      const n = Number(row[key]);
-      return Number.isFinite(n) ? n : 0;
-    }),
-  );
-
-  const pointCount = data.length;
-  const stackedTops: number[][] = categories.map(() => Array.from({ length: pointCount }, () => 0));
-  const stackedBases: number[][] = categories.map(() =>
-    Array.from({ length: pointCount }, () => 0),
-  );
-
-  if (isStacked) {
-    for (let i = 0; i < pointCount; i += 1) {
-      const totalsByStack = new Map<string, number>();
-      for (let s = 0; s < categories.length; s += 1) {
-        const id = stackKey(s);
-        totalsByStack.set(id, (totalsByStack.get(id) ?? 0) + (rawByCategory[s]?.[i] ?? 0));
-      }
-
-      const runningByStack = new Map<string, number>();
-      for (let s = 0; s < categories.length; s += 1) {
-        const id = stackKey(s);
-        const raw = rawByCategory[s]?.[i] ?? 0;
-        const total = totalsByStack.get(id) ?? 0;
-        const portion = expand ? (total > 0 ? raw / total : 0) : raw;
-        const base = runningByStack.get(id) ?? 0;
-        const top = base + portion;
-        const basesRow = stackedBases[s];
-        const topsRow = stackedTops[s];
-        if (basesRow) basesRow[i] = base;
-        if (topsRow) topsRow[i] = top;
-        runningByStack.set(id, top);
-      }
-    }
-  }
-
-  return categories.map((key, i) => {
-    const entry = config?.[key];
-    const bands: PixelWaveBands =
-      entry?.bands ??
-      (baseColors[i]
-        ? bandsFromColor(baseColors[i] ?? '#888888')
-        : bandsFromColor(entry?.color ?? '#888888'));
-
-    return {
-      name: entry?.label ?? key,
-      values: isStacked ? (stackedTops[i] ?? []) : (rawByCategory[i] ?? []),
-      bases: isStacked ? (stackedBases[i] ?? []) : undefined,
-      bands,
-      stackId: isStacked ? stackKey(i) : undefined,
-      stackIndex: isStacked ? i : undefined,
-    };
-  });
 }
 
 export function DuneAreaChart<T extends Record<string, unknown>>({
@@ -148,7 +72,7 @@ export function DuneAreaChart<T extends Record<string, unknown>>({
   }, [categories, config, theme]);
 
   const waveSeries = useMemo(
-    () => toSeriesList(data, categories, config, baseColors, seriesProps, chartProps),
+    () => buildSeriesList(data, categories, config, baseColors, seriesProps, chartProps),
     [data, categories, config, baseColors, seriesProps, chartProps],
   );
   const paintsReady = baseColors.length === categories.length;
