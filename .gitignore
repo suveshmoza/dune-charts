@@ -1,0 +1,50 @@
+# Dependencies
+**/node_modules/
+
+# Builds
+dist
+dist-ssr
+*.tsbuildinfo
+
+# Vite
+apps/*/dist
+**/.vite
+
+# Tests
+coverage
+*.lcov
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Caches / tooling
+.cache
+.turbo
+.eslintcache
+.stylelintcache
+*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

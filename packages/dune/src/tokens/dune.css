@@ -1,0 +1,24 @@
+/* Day / dune — beach parchment, SURF-SAND-BOX adjacent palette */
+[data-dune-theme='dune'] {
+  --dune-bg: #ffffff;
+  --dune-ink: #2a2118;
+  --dune-muted-text: #6e5a40;
+  --dune-grid: #d4bc94;
+  --dune-tick: #8a7048;
+  --dune-border: #c4a06a;
+  --dune-font: 'Avenir Next', 'Segoe UI', Candara, 'Century Gothic', sans-serif;
+
+  /* Series: clay → ochre → taupe → sage → sky (beach toy box) */
+  --dune-1: #c45c26;
+  --dune-2: #d4a017;
+  --dune-3: #7a5c3c;
+  --dune-4: #3d8a7a;
+  --dune-5: #4a7ab0;
+
+  --dune-accent: #e03a2a;
+
+  --dune-tooltip-bg: #2a2118;
+  --dune-tooltip-ink: #f5eee4;
+  --dune-tooltip-border: #4a3d2e;
+  --dune-tooltip-shadow: rgb(42 33 24 / 28%);
+}

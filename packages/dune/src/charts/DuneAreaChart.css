@@ -1,0 +1,49 @@
+.dune-chart-empty {
+  display: grid;
+  place-items: center;
+  color: var(--dune-muted-text);
+}
+
+.dune-chart-empty__message {
+  margin: 0;
+  font-size: 14px;
+}
+
+.dune-tooltip {
+  min-width: 140px;
+  padding: 10px 12px;
+  border-radius: 0;
+  background: var(--dune-tooltip-bg);
+  color: var(--dune-tooltip-ink);
+  border: 2px solid var(--dune-tooltip-border);
+  box-shadow: 4px 4px 0 var(--dune-tooltip-shadow);
+  font-family: var(--dune-font);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.dune-tooltip__label {
+  margin-bottom: 8px;
+  color: var(--dune-tooltip-ink);
+  opacity: 0.8;
+  font-weight: 600;
+}
+
+.dune-tooltip__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.dune-tooltip__item {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.dune-tooltip__value {
+  color: var(--dune-tooltip-ink);
+  font-variant-numeric: tabular-nums;
+}

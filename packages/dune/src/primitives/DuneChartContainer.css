@@ -1,0 +1,23 @@
+.dune-chart-container {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
+  background: var(--dune-bg);
+  color: var(--dune-ink);
+  border-radius: 0;
+  font-family: var(--dune-font);
+  font-variant-numeric: tabular-nums;
+}
+
+.dune-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

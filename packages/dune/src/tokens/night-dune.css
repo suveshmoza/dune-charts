@@ -1,0 +1,23 @@
+/* Dusk / night-dune — night beach */
+[data-dune-theme='night-dune'] {
+  --dune-bg: #16131a;
+  --dune-ink: #e8dcc8;
+  --dune-muted-text: #9a8b74;
+  --dune-grid: #2e2834;
+  --dune-tick: #6b5e4c;
+  --dune-border: #3a322c;
+  --dune-font: 'Avenir Next', 'Segoe UI', Candara, 'Century Gothic', sans-serif;
+
+  --dune-1: #e07a3d;
+  --dune-2: #e0b44a;
+  --dune-3: #c4a882;
+  --dune-4: #4ec4a8;
+  --dune-5: #6a9ed4;
+
+  --dune-accent: #f0a060;
+
+  --dune-tooltip-bg: #24202a;
+  --dune-tooltip-ink: #e8dcc8;
+  --dune-tooltip-border: #4a4238;
+  --dune-tooltip-shadow: rgb(0 0 0 / 45%);
+}
