@@ -124,14 +124,14 @@ describe('bandIndexFromCrestRow', () => {
 describe('bandIndexFromCrestRowDither', () => {
   it('uses wider row boundaries than solid bands', () => {
     expect(bandIndexFromCrestRowDither(0)).toBe(0);
-    expect(bandIndexFromCrestRowDither(7)).toBe(0);
-    expect(bandIndexFromCrestRowDither(8)).toBe(1);
-    expect(bandIndexFromCrestRowDither(19)).toBe(1);
-    expect(bandIndexFromCrestRowDither(20)).toBe(2);
-    expect(bandIndexFromCrestRowDither(35)).toBe(2);
-    expect(bandIndexFromCrestRowDither(36)).toBe(3);
-    expect(bandIndexFromCrestRowDither(55)).toBe(3);
-    expect(bandIndexFromCrestRowDither(56)).toBe(4);
+    expect(bandIndexFromCrestRowDither(5)).toBe(0);
+    expect(bandIndexFromCrestRowDither(6)).toBe(1);
+    expect(bandIndexFromCrestRowDither(17)).toBe(1);
+    expect(bandIndexFromCrestRowDither(18)).toBe(2);
+    expect(bandIndexFromCrestRowDither(31)).toBe(2);
+    expect(bandIndexFromCrestRowDither(32)).toBe(3);
+    expect(bandIndexFromCrestRowDither(47)).toBe(3);
+    expect(bandIndexFromCrestRowDither(48)).toBe(4);
   });
 });
 

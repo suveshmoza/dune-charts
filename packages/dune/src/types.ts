@@ -3,6 +3,7 @@ import type {
   AreaProps,
   BarProps,
   LegendProps,
+  LineProps,
   TooltipProps,
   XAxisProps,
   YAxisProps,
@@ -23,6 +24,7 @@ export type DuneSeriesConfig = {
 
 type RechartsAreaChart = typeof import('recharts').AreaChart;
 type RechartsBarChart = typeof import('recharts').BarChart;
+type RechartsLineChart = typeof import('recharts').LineChart;
 
 /** Pass-through AreaChart props; Dune owns `data` / `children`. */
 export type DuneAreaChartPassThrough = Omit<
@@ -48,13 +50,24 @@ export type DuneBarSeriesPassThrough = Omit<
   'dataKey' | 'data' | 'name'
 >;
 
-type DuneCartesianSharedProps<T> = {
+/** Pass-through LineChart props; Dune owns `data` / `children`. */
+export type DuneLineChartPassThrough = Omit<
+  ComponentPropsWithoutRef<RechartsLineChart>,
+  'data' | 'children'
+>;
+
+/** Pass-through Line props; Dune owns `dataKey` / `data` / `name`. */
+export type DuneLineSeriesPassThrough = Omit<
+  LineProps<unknown, unknown>,
+  'dataKey' | 'data' | 'name'
+>;
+
+/** Shared cartesian fields without fill-wave (`fill` is area/bar only). */
+type DuneCartesianBaseProps<T> = {
   data: readonly T[];
   categories: readonly DataKey<T>[];
   index: DataKey<T>;
   config?: Partial<Record<DataKey<T>, DuneSeriesConfig>>;
-  /** Pixel fill style. `bands` (default) or Bayer `dither` mesh. */
-  fill?: PixelWaveFill;
   /** Cell size in CSS pixels (default 4). Clamped to ≥ 1. */
   pixel?: number;
   className?: string;
@@ -71,6 +84,11 @@ type DuneCartesianSharedProps<T> = {
   children?: ReactNode;
 };
 
+type DuneCartesianSharedProps<T> = DuneCartesianBaseProps<T> & {
+  /** Pixel fill style. `bands` (default) or Bayer `dither` mesh. */
+  fill?: PixelWaveFill;
+};
+
 export type DuneCartesianChartProps<T> = DuneCartesianSharedProps<T> & {
   chartProps?: DuneAreaChartPassThrough;
   seriesProps?: Partial<Record<DataKey<T>, DuneAreaSeriesPassThrough>>;
@@ -79,4 +97,9 @@ export type DuneCartesianChartProps<T> = DuneCartesianSharedProps<T> & {
 export type DuneBarChartProps<T> = DuneCartesianSharedProps<T> & {
   chartProps?: DuneBarChartPassThrough;
   seriesProps?: Partial<Record<DataKey<T>, DuneBarSeriesPassThrough>>;
+};
+
+export type DuneLineChartProps<T> = DuneCartesianBaseProps<T> & {
+  chartProps?: DuneLineChartPassThrough;
+  seriesProps?: Partial<Record<DataKey<T>, DuneLineSeriesPassThrough>>;
 };

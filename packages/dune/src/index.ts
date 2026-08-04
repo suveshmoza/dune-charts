@@ -27,12 +27,17 @@ export type {
   DuneBarChartProps,
   DuneBarSeriesPassThrough,
   DuneCartesianChartProps,
+  DuneLineChartPassThrough,
+  DuneLineChartProps,
+  DuneLineSeriesPassThrough,
   DuneSeriesConfig,
 } from './types';
 
 export { DuneAreaChart, type DuneAreaChartProps } from './charts/DuneAreaChart';
 
 export { DuneBarChart } from './charts/DuneBarChart';
+
+export { DuneLineChart } from './charts/DuneLineChart';
 
 export {
   bandsFromColor,

@@ -1,6 +1,6 @@
 # dune
 
-Pixel-wave area and pixel-block bar charts on a Recharts shell. Themes, crest→depth fills, chunky cells.
+Pixel-wave area, pixel-block bar, and stepped pixel line charts on a Recharts shell. Themes, crest→depth fills, chunky cells.
 
 ## Install
 
@@ -13,7 +13,7 @@ pnpm add dune recharts
 Until publish, use the workspace package from this monorepo (`packages/dune`).
 
 ```ts
-import { DuneChartProvider, DuneAreaChart, DuneBarChart } from 'dune';
+import { DuneChartProvider, DuneAreaChart, DuneBarChart, DuneLineChart } from 'dune';
 import 'dune/styles.css';
 ```
 
@@ -42,7 +42,7 @@ import 'dune/styles.css';
 | Prop                         | Notes                                                |
 | ---------------------------- | ---------------------------------------------------- |
 | `theme` (provider)           | `dune` \| `night-dune`                               |
-| `fill`                       | `bands` (default) \| `dither`                        |
+| `fill`                       | Area/bar: `bands` (default) \| `dither`              |
 | `pixel`                      | Cell size in CSS px (default `4`)                    |
 | `config`                     | Per-series `label`, `color`, optional `bands`        |
 | `seriesProps` / `chartProps` | Recharts pass-throughs (`stackId`, `stackOffset`, …) |
@@ -58,4 +58,4 @@ pnpm test
 
 Docs site later. Playground: [`apps/playground`](apps/playground).
 
-`DuneAreaChart` and `DuneBarChart` share `fill` / `pixel` / `config` / stack pass-throughs. Pass `title` / `description` for the chart region; series `config.label` for legend and tooltip text.
+`DuneAreaChart` / `DuneBarChart` share `fill` / `pixel` / `config` / stack pass-throughs. `DuneLineChart` is stepped pixel stroke only (no fill wave). Pass `title` / `description` for the chart region; series `config.label` for legend and tooltip text.

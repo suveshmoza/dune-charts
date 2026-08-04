@@ -1,4 +1,4 @@
-import { DuneAreaChart, DuneBarChart, type PixelWaveFill } from 'dune';
+import { DuneAreaChart, DuneBarChart, DuneLineChart, type PixelWaveFill } from 'dune';
 import { useMemo, useState, type ReactNode } from 'react';
 
 import { THROUGHPUT_KEYS, throughput, throughputConfig, type ThroughputRow } from './data';
@@ -213,7 +213,57 @@ export function ChartBarSimple({ fill = 'bands', pixel = 4 }: ChartControls) {
   );
 }
 
-/** Gallery of area + bar chart variants for the dashboard. */
+/** Multi-series stepped pixel lines. */
+export function ChartLineMulti({ pixel = 4 }: ChartControls) {
+  const { data, rangeToggle } = useRangeData();
+
+  return (
+    <ChartCard
+      title="Stepped lines"
+      description="Pixel step-after lines — overlay, no fill wave."
+      actions={rangeToggle}
+    >
+      <DuneLineChart<ThroughputRow>
+        data={data}
+        index="month"
+        categories={['melange', 'water', 'thrift']}
+        height={280}
+        title="Stepped lines"
+        description="Multi-series stepped pixel line chart."
+        config={throughputConfig}
+        pixel={pixel}
+        valueFormatter={(value) => String(value)}
+      />
+    </ChartCard>
+  );
+}
+
+/** Single-series stepped pixel line. */
+export function ChartLineSimple({ pixel = 4 }: ChartControls) {
+  const { data, rangeToggle } = useRangeData();
+
+  return (
+    <ChartCard
+      title="Simple line"
+      description="One series — melange as a stepped pixel path."
+      actions={rangeToggle}
+    >
+      <DuneLineChart<ThroughputRow>
+        data={data}
+        index="month"
+        categories={['melange']}
+        height={280}
+        title="Simple line"
+        description="Single-series stepped pixel line chart."
+        config={throughputConfig}
+        pixel={pixel}
+        valueFormatter={(value) => String(value)}
+      />
+    </ChartCard>
+  );
+}
+
+/** Gallery of area + bar + line chart variants for the dashboard. */
 export function ChartAreaInteractive(props: ChartControls) {
   return (
     <div className="db-chart-gallery">
@@ -222,6 +272,8 @@ export function ChartAreaInteractive(props: ChartControls) {
       <ChartAreaExpand {...props} />
       <ChartBarStacked {...props} />
       <ChartBarSimple {...props} />
+      <ChartLineMulti {...props} />
+      <ChartLineSimple {...props} />
     </div>
   );
 }
