@@ -22,6 +22,8 @@ export type DuneCartesianChartProps<T> = {
   grain?: DuneGrain;
   /** Pixel-wave fill style. `bands` (default) or Bayer `dither` mesh. */
   fill?: PixelWaveFill;
+  /** Cell size in CSS pixels (default 4). Clamped to ≥ 1. */
+  pixel?: number;
   className?: string;
   height?: DuneChartSize;
   title?: string;

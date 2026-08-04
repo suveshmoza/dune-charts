@@ -1,14 +1,9 @@
-import { useId, useMemo, type ReactElement } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
 import { usePlotArea, useXAxisScale, useYAxisScale } from 'recharts';
 
+import { paintPixelWave, type DitherTileCache } from './paintPixelWave';
 import {
-  bandIndexFromCrestRow,
-  buildBayerTile,
   computePixelWavePlotLayout,
-  ditherDensityForBand,
-  ditherPairFromBands,
-  hashString,
-  sortDrawOrder,
   type PixelWaveFill,
   type PixelWaveSeries,
 } from './pixelWaveEngine';
@@ -23,10 +18,8 @@ export type PixelWavePlotLayerProps = {
   fill?: PixelWaveFill;
 };
 
-const DITHER_SUBPIXEL = 2;
-
 /**
- * Draws chunky pixel-wave fills inside the Recharts plot area.
+ * Draws chunky pixel-wave fills inside the Recharts plot area via Canvas2D.
  * Pointer events stay on Area series for tooltip / legend.
  */
 export function PixelWavePlotLayer({
@@ -39,7 +32,8 @@ export function PixelWavePlotLayer({
   const plot = usePlotArea();
   const yScale = useYAxisScale();
   const xScale = useXAxisScale();
-  const reactId = useId().replace(/:/g, '');
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const ditherTilesRef = useRef<DitherTileCache>(new Map());
 
   const layout = useMemo(() => {
     if (plot == null || yScale == null) return null;
@@ -56,85 +50,43 @@ export function PixelWavePlotLayer({
     });
   }, [plot, yScale, xScale, series, pointCount, pixel, indexValues]);
 
-  const ditherPatterns = useMemo(() => {
-    if (fill !== 'dither') return null;
-    return series.flatMap((s) => {
-      const seriesKey = hashString(s.name).toString(36);
-      return ([0, 1, 2, 3, 4] as const).map((band) => {
-        const [hi, lo] = ditherPairFromBands(s.bands, band);
-        const density = ditherDensityForBand(band);
-        const tile = buildBayerTile(hi, lo, density, DITHER_SUBPIXEL);
-        const id = `dune-dither-${reactId}-${seriesKey}-${band}`;
-        return { id, seriesName: s.name, band, tile };
-      });
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas == null || layout == null) return;
+
+    const { plotW, plotH } = layout;
+    const dpr = typeof window !== 'undefined' ? Math.max(1, window.devicePixelRatio || 1) : 1;
+    const cssW = Math.max(1, plotW);
+    const cssH = Math.max(1, plotH);
+
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    canvas.style.width = `${cssW}px`;
+    canvas.style.height = `${cssH}px`;
+
+    const ctx = canvas.getContext('2d');
+    if (ctx == null) return;
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    paintPixelWave(ctx, {
+      layout,
+      series,
+      fill,
+      ditherTiles: ditherTilesRef.current,
     });
-  }, [fill, series, reactId]);
+  }, [layout, series, fill]);
 
-  if (layout == null) return null;
+  if (layout == null || plot == null) return null;
 
-  const drawOrder = sortDrawOrder(series);
-  const cells: ReactElement[] = [];
-  const patternByKey = new Map(
-    ditherPatterns?.map((p) => [`${p.seriesName}:${p.band}`, p.id] as const) ?? [],
-  );
-
-  drawOrder.forEach((s) => {
-    for (const col of layout.columns) {
-      const topY = col.topY[s.name] ?? 0;
-      const cellCount = col.cellCount[s.name] ?? 0;
-
-      for (let row = 0; row < cellCount; row += 1) {
-        const band = bandIndexFromCrestRow(row);
-        const patternId = patternByKey.get(`${s.name}:${band}`);
-        const cellFill =
-          fill === 'dither' && patternId != null ? `url(#${patternId})` : s.bands[band];
-
-        cells.push(
-          <rect
-            key={`${s.name}-${col.x}-${row}`}
-            x={col.x}
-            y={topY + row * layout.pixel}
-            width={layout.pixel}
-            height={layout.pixel}
-            fill={cellFill}
-            shapeRendering="crispEdges"
-          />,
-        );
-      }
-    }
-  });
+  const { plotW, plotH } = layout;
 
   return (
     <g className="dune-pixel-wave-layer" pointerEvents="none" aria-hidden>
-      {ditherPatterns != null && ditherPatterns.length > 0 ? (
-        <defs>
-          {ditherPatterns.map((pattern) => {
-            const tileSize = 4 * DITHER_SUBPIXEL;
-            return (
-              <pattern
-                key={pattern.id}
-                id={pattern.id}
-                width={tileSize}
-                height={tileSize}
-                patternUnits="userSpaceOnUse"
-              >
-                {pattern.tile.map((cell) => (
-                  <rect
-                    key={`${pattern.id}-${cell.x}-${cell.y}`}
-                    x={cell.x}
-                    y={cell.y}
-                    width={cell.size}
-                    height={cell.size}
-                    fill={cell.fill}
-                    shapeRendering="crispEdges"
-                  />
-                ))}
-              </pattern>
-            );
-          })}
-        </defs>
-      ) : null}
-      {cells}
+      <foreignObject x={plot.x} y={plot.y} width={plotW} height={plotH}>
+        <div style={{ width: plotW, height: plotH, margin: 0 }}>
+          <canvas ref={canvasRef} style={{ display: 'block', width: plotW, height: plotH }} />
+        </div>
+      </foreignObject>
     </g>
   );
 }

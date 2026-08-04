@@ -11,7 +11,13 @@ const RANGES = [
 
 type RangeId = (typeof RANGES)[number]['id'];
 
-export function ChartAreaInteractive({ fill = 'bands' }: { fill?: PixelWaveFill }) {
+export function ChartAreaInteractive({
+  fill = 'bands',
+  pixel = 4,
+}: {
+  fill?: PixelWaveFill;
+  pixel?: number;
+}) {
   const [range, setRange] = useState<RangeId>('12m');
 
   const months = RANGES.find((r) => r.id === range)?.months ?? 12;
@@ -65,6 +71,7 @@ export function ChartAreaInteractive({ fill = 'bands' }: { fill?: PixelWaveFill 
         description="Stacked spice throughput for the selected range."
         config={throughputConfig}
         fill={fill}
+        pixel={pixel}
         valueFormatter={(value) => String(value)}
         seriesProps={stackProps}
       />

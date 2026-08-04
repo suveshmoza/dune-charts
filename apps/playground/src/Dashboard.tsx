@@ -5,7 +5,7 @@ import { AppSidebar } from './dashboard/AppSidebar';
 import { ChartAreaInteractive } from './dashboard/ChartAreaInteractive';
 import { DataTable } from './dashboard/DataTable';
 import { SectionCards } from './dashboard/SectionCards';
-import { SiteHeader } from './dashboard/SiteHeader';
+import { SiteHeader, type PixelSize } from './dashboard/SiteHeader';
 
 import './Dashboard.css';
 
@@ -30,6 +30,7 @@ function useIsMobile() {
 export default function Dashboard() {
   const [theme, setTheme] = useState<DuneTheme>('dune');
   const [fill, setFill] = useState<PixelWaveFill>('dither');
+  const [pixel, setPixel] = useState<PixelSize>(4);
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(() =>
     typeof window !== 'undefined' ? !window.matchMedia(MOBILE_MQ).matches : true,
@@ -76,13 +77,15 @@ export default function Dashboard() {
               onToggleSidebar={toggleSidebar}
               theme={theme}
               fill={fill}
+              pixel={pixel}
               onThemeChange={setTheme}
               onFillChange={setFill}
+              onPixelChange={setPixel}
             />
             <div className="db-main">
               <SectionCards />
               <div className="db-main__chart">
-                <ChartAreaInteractive fill={fill} />
+                <ChartAreaInteractive fill={fill} pixel={pixel} />
               </div>
               <DataTable />
             </div>

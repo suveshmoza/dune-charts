@@ -22,7 +22,12 @@ export type DuneAreaChartProps<T> = DuneCartesianChartProps<T>;
 
 const DUNE_EASE = 'ease-out';
 const DUNE_DURATION = 520;
-const PIXEL = 4;
+const DEFAULT_PIXEL = 4;
+
+function clampPixel(pixel: number | undefined): number {
+  if (pixel == null || !Number.isFinite(pixel)) return DEFAULT_PIXEL;
+  return Math.max(1, Math.floor(pixel));
+}
 
 function toCssSize(value: number | string | undefined): string | undefined {
   if (value == null) return undefined;
@@ -113,6 +118,7 @@ export function DuneAreaChart<T extends Record<string, unknown>>({
   config,
   grain: _grain,
   fill = 'bands',
+  pixel: pixelProp,
   className,
   height = 320,
   title,
@@ -128,6 +134,7 @@ export function DuneAreaChart<T extends Record<string, unknown>>({
 }: DuneAreaChartProps<T>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
+  const pixel = clampPixel(pixelProp);
   const { theme } = useDuneTheme();
   const seriesStyle = buildSeriesStyle(categories, config);
   const [baseColors, setBaseColors] = useState<string[]>([]);
@@ -243,7 +250,7 @@ export function DuneAreaChart<T extends Record<string, unknown>>({
             series={waveSeries}
             pointCount={data.length}
             indexValues={indexValues}
-            pixel={PIXEL}
+            pixel={pixel}
             fill={fill}
           />
         ) : null}

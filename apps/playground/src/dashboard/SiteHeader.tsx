@@ -2,13 +2,18 @@ import { IconLayoutSidebar, IconX } from '@tabler/icons-react';
 import type { PixelWaveFill, DuneTheme } from 'dune';
 import { PIXEL_WAVE_FILLS, DUNE_THEMES } from 'dune';
 
+const PIXEL_SIZES = [1, 2, 4, 8] as const;
+export type PixelSize = (typeof PIXEL_SIZES)[number];
+
 type SiteHeaderProps = {
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
   theme: DuneTheme;
   fill: PixelWaveFill;
+  pixel: PixelSize;
   onThemeChange: (theme: DuneTheme) => void;
   onFillChange: (fill: PixelWaveFill) => void;
+  onPixelChange: (pixel: PixelSize) => void;
 };
 
 function isDuneTheme(value: string): value is DuneTheme {
@@ -25,13 +30,22 @@ function isPixelWaveFill(value: string): value is PixelWaveFill {
   return false;
 }
 
+function isPixelSize(value: number): value is PixelSize {
+  for (const size of PIXEL_SIZES) {
+    if (size === value) return true;
+  }
+  return false;
+}
+
 export function SiteHeader({
   sidebarOpen,
   onToggleSidebar,
   theme,
   fill,
+  pixel,
   onThemeChange,
   onFillChange,
+  onPixelChange,
 }: SiteHeaderProps) {
   return (
     <header className="db-header">
@@ -79,6 +93,22 @@ export function SiteHeader({
             }}
           >
             {PIXEL_WAVE_FILLS.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="db-field">
+          <span>Pixel</span>
+          <select
+            value={pixel}
+            onChange={(e) => {
+              const next = Number(e.target.value);
+              if (isPixelSize(next)) onPixelChange(next);
+            }}
+          >
+            {PIXEL_SIZES.map((value) => (
               <option key={value} value={value}>
                 {value}
               </option>
