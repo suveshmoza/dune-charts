@@ -13,13 +13,20 @@
     "lint": "oxlint .",
     "lint:fix": "oxlint --fix .",
     "fmt": "oxfmt",
-    "fmt:check": "oxfmt --check"
+    "fmt:check": "oxfmt --check",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
+    "nano-staged": "^1.0.2",
     "oxfmt": "^0.61.0",
     "oxlint": "^1.76.0",
     "oxlint-tsgolint": "^7.0.2001",
     "typescript": "^7.0.2"
+  },
+  "nano-staged": {
+    "*.{js,jsx,ts,tsx}": "oxlint --fix",
+    "*": "oxfmt --no-error-on-unmatched-pattern"
   },
   "devEngines": {
     "packageManager": {
