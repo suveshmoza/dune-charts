@@ -231,9 +231,6 @@ importers:
       '@tabler/icons-react':
         specifier: ^3.46.0
         version: 3.46.0(react@19.2.8)
-      d3-shape:
-        specifier: ^3.2.0
-        version: 3.2.0
       dune:
         specifier: workspace:*
         version: link:../../packages/dune
@@ -256,9 +253,6 @@ importers:
       '@types/babel__core':
         specifier: ^7.20.5
         version: 7.20.5
-      '@types/d3-shape':
-        specifier: ^3.1.8
-        version: 3.1.8
       '@types/node':
         specifier: ^24.13.3
         version: 24.13.3

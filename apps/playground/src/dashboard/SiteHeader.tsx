@@ -65,7 +65,7 @@ export function SiteHeader({
           )}
         </button>
         <span className="db-header__sep" aria-hidden />
-        <h1 className="db-header__title">Documents</h1>
+        <h1 className="db-header__title">Dashboard</h1>
       </div>
 
       <div className="db-header__right">

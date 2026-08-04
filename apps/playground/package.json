@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@tabler/icons-react": "^3.46.0",
-    "d3-shape": "^3.2.0",
     "dune": "workspace:*",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
@@ -20,7 +19,6 @@
     "@babel/core": "^7.29.7",
     "@rolldown/plugin-babel": "^0.2.3",
     "@types/babel__core": "^7.20.5",
-    "@types/d3-shape": "^3.1.8",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",

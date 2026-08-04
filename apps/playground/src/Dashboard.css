@@ -494,6 +494,22 @@
   padding: 0 1rem;
 }
 
+.db-chart-gallery {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 1100px) {
+  .db-chart-gallery {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .db-chart-gallery > :first-child {
+    grid-column: 1 / -1;
+  }
+}
+
 .db-chart-card {
   padding: 1rem;
   border: var(--db-edge) solid var(--db-line);

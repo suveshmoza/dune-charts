@@ -1,37 +1,11 @@
-import {
-  IconChartBar,
-  IconDashboard,
-  IconDatabase,
-  IconFolder,
-  IconHelp,
-  IconListDetails,
-  IconReport,
-  IconSearch,
-  IconSettings,
-  IconUsers,
-  IconX,
-} from '@tabler/icons-react';
+import { IconChartBar, IconDashboard, IconSettings, IconX } from '@tabler/icons-react';
 
 import { PixelMark } from './PixelMark';
 
 const navMain = [
   { title: 'Dashboard', icon: IconDashboard, active: true },
-  { title: 'Lifecycle', icon: IconListDetails },
   { title: 'Analytics', icon: IconChartBar },
-  { title: 'Projects', icon: IconFolder },
-  { title: 'Team', icon: IconUsers },
-] as const;
-
-const documents = [
-  { title: 'Data Library', icon: IconDatabase },
-  { title: 'Reports', icon: IconReport },
-  { title: 'Word Assistant', icon: IconFolder },
-] as const;
-
-const secondary = [
   { title: 'Settings', icon: IconSettings },
-  { title: 'Get Help', icon: IconHelp },
-  { title: 'Search', icon: IconSearch },
 ] as const;
 
 type AppSidebarProps = {
@@ -48,9 +22,9 @@ export function AppSidebar({ open = true, onClose }: AppSidebarProps) {
       aria-hidden={!open || undefined}
     >
       <div className="db-sidebar__header">
-        <a href="#" className="db-brand" onClick={(e) => e.preventDefault()}>
+        <a href="/" className="db-brand">
           <PixelMark />
-          <span className="db-brand__name">dune Inc.</span>
+          <span className="db-brand__name">dune</span>
         </a>
         {onClose ? (
           <button
@@ -66,47 +40,14 @@ export function AppSidebar({ open = true, onClose }: AppSidebarProps) {
 
       <div className="db-sidebar__content">
         <div className="db-nav-group">
-          <button type="button" className="db-quick">
-            Quick Create
-          </button>
           <ul className="db-nav">
             {navMain.map((item) => (
               <li key={item.title}>
                 <button
                   type="button"
                   className={`db-nav__item${'active' in item && item.active ? ' is-active' : ''}`}
+                  aria-current={'active' in item && item.active ? 'page' : undefined}
                 >
-                  <span className="db-nav__icon">
-                    <item.icon size={16} stroke={2.25} aria-hidden />
-                  </span>
-                  <span>{item.title}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="db-nav-group">
-          <p className="db-nav-group__label">Documents</p>
-          <ul className="db-nav">
-            {documents.map((item) => (
-              <li key={item.title}>
-                <button type="button" className="db-nav__item">
-                  <span className="db-nav__icon">
-                    <item.icon size={16} stroke={2.25} aria-hidden />
-                  </span>
-                  <span>{item.title}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="db-nav-group db-nav-group--foot">
-          <ul className="db-nav">
-            {secondary.map((item) => (
-              <li key={item.title}>
-                <button type="button" className="db-nav__item">
                   <span className="db-nav__icon">
                     <item.icon size={16} stroke={2.25} aria-hidden />
                   </span>

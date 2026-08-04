@@ -1,34 +1,27 @@
-# React + TypeScript + Vite
+# dune playground
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Live Dashboard demo for the [`dune`](../../packages/dune) chart library.
 
-Currently, two official plugins are available:
+## Run
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+From the repo root:
 
-## React Compiler
-
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
-
-Note: This will impact Vite dev & build performances.
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+pnpm dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Or:
+
+```bash
+pnpm --filter playground dev
+```
+
+## Controls
+
+Header toggles:
+
+- **Theme** — `dune` | `night-dune`
+- **Fill** — `bands` | `dither`
+- **Pixel** — cell size (`1` | `2` | `4` | `8`)
+
+Charts on the page: stacked multi-series, simple single-series, and 100% expand stack. All share the header fill/pixel settings.
