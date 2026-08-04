@@ -15,11 +15,12 @@ export function buildSeriesList<T extends Record<string, unknown>>(
 ): PixelWaveSeries[] {
   const expand = chartProps?.stackOffset === 'expand';
   const stackIds = categories.map((key) => seriesProps?.[key]?.stackId);
-  const isStacked = stackIds.some((id) => id != null && id !== false);
+  const isStacked = stackIds.some((id) => id != null);
 
   const stackKey = (index: number): string => {
     const raw = stackIds[index];
-    if (typeof raw === 'string' || typeof raw === 'number' || typeof raw === 'boolean') {
+    // StackId is string | number at the type level; guard at runtime anyway.
+    if (typeof raw === 'string' || typeof raw === 'number') {
       return String(raw);
     }
     return String(index);

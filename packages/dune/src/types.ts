@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import type { ComponentPropsWithoutRef, ReactNode } from 'react';
+import type { AreaProps, LegendProps, TooltipProps, XAxisProps, YAxisProps } from 'recharts';
 
 import type { PixelWaveBands, PixelWaveFill } from './charts/pixelWaveEngine';
 import type { DuneChartSize } from './primitives/DuneChartContainer';
@@ -12,6 +13,20 @@ export type DuneSeriesConfig = {
   /** Optional explicit 5-stop crest→depth override (dark → brighter). */
   bands?: PixelWaveBands;
 };
+
+type RechartsAreaChart = typeof import('recharts').AreaChart;
+
+/** Pass-through AreaChart props; Dune owns `data` / `children`. */
+export type DuneAreaChartPassThrough = Omit<
+  ComponentPropsWithoutRef<RechartsAreaChart>,
+  'data' | 'children'
+>;
+
+/** Pass-through Area props; Dune owns `dataKey` / `data` / `name`. */
+export type DuneAreaSeriesPassThrough = Omit<
+  AreaProps<unknown, unknown>,
+  'dataKey' | 'data' | 'name'
+>;
 
 export type DuneCartesianChartProps<T> = {
   data: readonly T[];
@@ -27,12 +42,15 @@ export type DuneCartesianChartProps<T> = {
   title?: string;
   description?: string;
   valueFormatter?: (value: number, key: DataKey<T>) => string;
-  // Escape hatches — tighten to Recharts prop types later
-  chartProps?: Record<string, unknown>;
-  seriesProps?: Partial<Record<DataKey<T>, Record<string, unknown>>>;
-  xAxisProps?: Record<string, unknown>;
-  yAxisProps?: Record<string, unknown>;
-  tooltipProps?: Record<string, unknown>;
-  legendProps?: Record<string, unknown>;
+  /** Extra props spread onto the underlying Recharts `AreaChart`. */
+  chartProps?: DuneAreaChartPassThrough;
+  /** Per-series props spread onto each Recharts `Area` (e.g. `stackId`). */
+  seriesProps?: Partial<Record<DataKey<T>, DuneAreaSeriesPassThrough>>;
+  /** Extra props for the index `XAxis` (`dataKey` is owned by Dune). */
+  xAxisProps?: Omit<XAxisProps<unknown, unknown>, 'dataKey'>;
+  yAxisProps?: YAxisProps<unknown, unknown>;
+  /** Extra tooltip props; Dune keeps the custom `content` renderer. */
+  tooltipProps?: Omit<TooltipProps, 'content'>;
+  legendProps?: LegendProps;
   children?: ReactNode;
 };

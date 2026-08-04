@@ -19,7 +19,13 @@ export {
   type DuneTokenKey,
 } from './tokens/theme';
 
-export type { DataKey, DuneCartesianChartProps, DuneSeriesConfig } from './types';
+export type {
+  DataKey,
+  DuneAreaChartPassThrough,
+  DuneAreaSeriesPassThrough,
+  DuneCartesianChartProps,
+  DuneSeriesConfig,
+} from './types';
 
 export { DuneAreaChart, type DuneAreaChartProps } from './charts/DuneAreaChart';
 
