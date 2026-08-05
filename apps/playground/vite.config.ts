@@ -6,7 +6,7 @@ import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
-const duneSrc = path.resolve(root, '../../packages/dune/src');
+const duneSrc = path.resolve(root, '../../packages/dune-charts/src');
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -14,13 +14,13 @@ export default defineConfig({
   resolve: {
     alias: {
       // Hot-reload package source instead of stale dist
-      'dune/styles.css': path.join(duneSrc, 'styles.css'),
-      dune: path.join(duneSrc, 'index.ts'),
+      '@suveshmoza/dune-charts/styles.css': path.join(duneSrc, 'styles.css'),
+      '@suveshmoza/dune-charts': path.join(duneSrc, 'index.ts'),
     },
   },
   server: {
     watch: {
-      ignored: ['!**/packages/dune/src/**'],
+      ignored: ['!**/packages/dune-charts/src/**'],
     },
   },
 });

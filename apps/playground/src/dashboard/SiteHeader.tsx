@@ -1,6 +1,6 @@
+import type { PixelWaveFill, DuneTheme } from '@suveshmoza/dune-charts';
+import { PIXEL_WAVE_FILLS, DUNE_THEMES } from '@suveshmoza/dune-charts';
 import { IconLayoutSidebar, IconX } from '@tabler/icons-react';
-import type { PixelWaveFill, DuneTheme } from 'dune';
-import { PIXEL_WAVE_FILLS, DUNE_THEMES } from 'dune';
 
 const PIXEL_SIZES = [1, 2, 4, 8] as const;
 export type PixelSize = (typeof PIXEL_SIZES)[number];

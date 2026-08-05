@@ -1,6 +1,6 @@
 # dune playground
 
-Live Dashboard demo for the [`dune`](../../packages/dune) chart library.
+Live Dashboard demo for [`@suveshmoza/dune-charts`](../../packages/dune-charts).
 
 ## Run
 
@@ -24,4 +24,4 @@ Header toggles:
 - **Fill** — `bands` | `dither`
 - **Pixel** — cell size (`1` | `2` | `4` | `8`)
 
-Charts on the page: stacked / simple / 100% expand areas, plus stacked and simple pixel bars. All share the header fill/pixel settings.
+Charts on the page: stacked / simple / 100% expand areas, pixel bars, stepped lines, and pixel pie/donut. All share the header fill/pixel settings.

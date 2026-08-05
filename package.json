@@ -7,9 +7,9 @@
   "author": "",
   "type": "module",
   "scripts": {
-    "build": "pnpm --filter dune build",
+    "build": "pnpm --filter @suveshmoza/dune-charts build",
     "dev": "pnpm --filter playground dev",
-    "test": "pnpm --filter dune test",
+    "test": "pnpm --filter @suveshmoza/dune-charts test",
     "lint": "oxlint .",
     "lint:fix": "oxlint --fix .",
     "fmt": "oxfmt",

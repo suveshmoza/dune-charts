@@ -1,4 +1,4 @@
-import { DuneChartProvider, type PixelWaveFill, type DuneTheme } from 'dune';
+import { DuneChartProvider, type PixelWaveFill, type DuneTheme } from '@suveshmoza/dune-charts';
 import { useEffect, useState } from 'react';
 
 import { AppSidebar } from './dashboard/AppSidebar';

@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
-import 'dune/styles.css';
+import '@suveshmoza/dune-charts/styles.css';
 import './index.css';
 import Dashboard from './Dashboard.tsx';
 

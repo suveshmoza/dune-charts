@@ -1,4 +1,10 @@
-import { DuneAreaChart, DuneBarChart, DuneLineChart, DunePieChart, type PixelWaveFill } from 'dune';
+import {
+  DuneAreaChart,
+  DuneBarChart,
+  DuneLineChart,
+  DunePieChart,
+  type PixelWaveFill,
+} from '@suveshmoza/dune-charts';
 import { useMemo, useState, type ReactNode } from 'react';
 
 import { THROUGHPUT_KEYS, throughput, throughputConfig, type ThroughputRow } from './data';

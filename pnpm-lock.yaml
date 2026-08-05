@@ -228,12 +228,12 @@ importers:
 
   apps/playground:
     dependencies:
+      '@suveshmoza/dune-charts':
+        specifier: workspace:*
+        version: link:../../packages/dune-charts
       '@tabler/icons-react':
         specifier: ^3.46.0
         version: 3.46.0(react@19.2.8)
-      dune:
-        specifier: workspace:*
-        version: link:../../packages/dune
       react:
         specifier: ^19.2.8
         version: 19.2.8
@@ -275,7 +275,7 @@ importers:
         specifier: ^8.2.0
         version: 8.2.0(@types/node@24.13.3)
 
-  packages/dune:
+  packages/dune-charts:
     devDependencies:
       '@testing-library/react':
         specifier: ^16.3.2

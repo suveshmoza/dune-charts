@@ -4,17 +4,19 @@ Pixel-wave area, pixel-block bar, stepped line, and pixel pie charts on a Rechar
 
 ## Install
 
-Peers: `react`, `react-dom`, `recharts` ^3.
-
 ```bash
-pnpm add dune recharts
+pnpm add @suveshmoza/dune-charts recharts
 ```
 
-Until publish, use the workspace package from this monorepo (`packages/dune`).
-
 ```ts
-import { DuneChartProvider, DuneAreaChart, DuneBarChart, DuneLineChart, DunePieChart } from 'dune';
-import 'dune/styles.css';
+import {
+  DuneChartProvider,
+  DuneAreaChart,
+  DuneBarChart,
+  DuneLineChart,
+  DunePieChart,
+} from '@suveshmoza/dune-charts';
+import '@suveshmoza/dune-charts/styles.css';
 ```
 
 ## Quick start
@@ -52,7 +54,7 @@ import 'dune/styles.css';
 
 ```bash
 pnpm install
-pnpm --filter dune build
+pnpm --filter @suveshmoza/dune-charts build
 pnpm dev                 # playground
 pnpm test
 ```

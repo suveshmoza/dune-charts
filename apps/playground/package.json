@@ -9,8 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@suveshmoza/dune-charts": "workspace:*",
     "@tabler/icons-react": "^3.46.0",
-    "dune": "workspace:*",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "recharts": "^3.10.1"
