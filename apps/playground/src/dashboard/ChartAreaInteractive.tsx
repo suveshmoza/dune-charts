@@ -4,6 +4,7 @@ import {
   DuneLineChart,
   DunePieChart,
   DuneRadarChart,
+  DuneRadialChart,
   type PixelWaveFill,
 } from '@suveshmoza/dune-charts';
 import { useMemo, useState, type ReactNode } from 'react';
@@ -357,7 +358,48 @@ export function ChartRadarSimple({ fill = 'bands', pixel = 4 }: ChartControls) {
   );
 }
 
-/** Gallery of area + bar + line + pie + radar chart variants for the dashboard. */
+/** Pixel radial ring arcs. */
+export function ChartRadialSimple({ fill = 'bands', pixel = 4 }: ChartControls) {
+  return (
+    <ChartCard title="Pixel radial" description="Concentric ring arcs — value sweeps the angle.">
+      <DuneRadialChart<ShareSlice>
+        data={SHARE_SLICES}
+        dataKey="value"
+        nameKey="name"
+        height={280}
+        title="Pixel radial"
+        description="Share of spice throughput as pixel radial bars."
+        config={throughputConfig}
+        fill={fill}
+        pixel={pixel}
+        valueFormatter={(value) => String(value)}
+      />
+    </ChartCard>
+  );
+}
+
+/** Semi-circle pixel radial. */
+export function ChartRadialSemi({ fill = 'bands', pixel = 4 }: ChartControls) {
+  return (
+    <ChartCard title="Pixel radial (semi)" description="Same arcs clipped to a half ring.">
+      <DuneRadialChart<ShareSlice>
+        data={SHARE_SLICES}
+        dataKey="value"
+        nameKey="name"
+        height={280}
+        title="Pixel radial semi"
+        description="Semi radial bars with pixel fill."
+        config={throughputConfig}
+        fill={fill}
+        pixel={pixel}
+        valueFormatter={(value) => String(value)}
+        chartProps={{ startAngle: 180, endAngle: 0, cy: '70%' }}
+      />
+    </ChartCard>
+  );
+}
+
+/** Gallery of area + bar + line + pie + radar + radial chart variants for the dashboard. */
 export function ChartAreaInteractive(props: ChartControls) {
   return (
     <div className="db-chart-gallery">
@@ -371,6 +413,8 @@ export function ChartAreaInteractive(props: ChartControls) {
       <ChartPieSimple {...props} />
       <ChartPieDonut {...props} />
       <ChartRadarSimple {...props} />
+      <ChartRadialSimple {...props} />
+      <ChartRadialSemi {...props} />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import type {
   PolarGridProps,
   PolarRadiusAxisProps,
   RadarProps,
+  RadialBarProps,
   TooltipProps,
   XAxisProps,
   YAxisProps,
@@ -32,6 +33,7 @@ type RechartsBarChart = typeof import('recharts').BarChart;
 type RechartsLineChart = typeof import('recharts').LineChart;
 type RechartsPieChart = typeof import('recharts').PieChart;
 type RechartsRadarChart = typeof import('recharts').RadarChart;
+type RechartsRadialBarChart = typeof import('recharts').RadialBarChart;
 
 /** Pass-through AreaChart props; Dune owns `data` / `children`. */
 export type DuneAreaChartPassThrough = Omit<
@@ -89,6 +91,15 @@ export type DuneRadarSeriesPassThrough = Omit<
   RadarProps<unknown, unknown>,
   'dataKey' | 'data' | 'name'
 >;
+
+/** Pass-through RadialBarChart props; Dune owns `data` / `children`. */
+export type DuneRadialChartPassThrough = Omit<
+  ComponentPropsWithoutRef<RechartsRadialBarChart>,
+  'data' | 'children'
+>;
+
+/** Pass-through RadialBar props; Dune owns `data` / `dataKey`. */
+export type DuneRadialBarPassThrough = Omit<RadialBarProps<unknown, unknown>, 'data' | 'dataKey'>;
 
 /** Shared cartesian fields without fill-wave (`fill` is area/bar only). */
 type DuneCartesianBaseProps<T> = {
@@ -178,6 +189,32 @@ export type DuneRadarChartProps<T extends Record<string, unknown>> = {
   polarAngleAxisProps?: Omit<PolarAngleAxisProps, 'dataKey'>;
   polarRadiusAxisProps?: PolarRadiusAxisProps;
   polarGridProps?: PolarGridProps;
+  tooltipProps?: Omit<TooltipProps, 'content'>;
+  legendProps?: LegendProps;
+  children?: ReactNode;
+};
+
+export type DuneRadialChartProps<T extends Record<string, unknown>> = {
+  data: readonly T[];
+  /** Numeric bar length field (Recharts `RadialBar` `dataKey`). */
+  dataKey: DataKey<T>;
+  /** Bar label field. Default `"name"`. */
+  nameKey?: DataKey<T>;
+  /** Per-bar config keyed by bar name. */
+  config?: Partial<Record<string, DuneSeriesConfig>>;
+  /** Pixel fill style. `bands` (default) or Bayer `dither` mesh. */
+  fill?: PixelWaveFill;
+  /** Cell size in CSS pixels (default 4). Clamped to ≥ 1. */
+  pixel?: number;
+  className?: string;
+  height?: DuneChartSize;
+  title?: string;
+  description?: string;
+  emptyMessage?: string;
+  valueFormatter?: (value: number, name: string) => string;
+  chartProps?: DuneRadialChartPassThrough;
+  radialBarProps?: DuneRadialBarPassThrough;
+  polarAngleAxisProps?: Omit<PolarAngleAxisProps, 'dataKey' | 'type' | 'domain'>;
   tooltipProps?: Omit<TooltipProps, 'content'>;
   legendProps?: LegendProps;
   children?: ReactNode;
