@@ -65,4 +65,4 @@ pnpm test
 
 Docs site later. Playground: [`apps/playground`](apps/playground).
 
-`DuneAreaChart` / `DuneBarChart` / `DunePieChart` / `DuneRadarChart` / `DuneRadialChart` / `DuneComposedChart` share `fill` / `pixel` / `config`. `DuneLineChart` is stepped pixel stroke only (no fill wave). Pie and radial use Recharts `dataKey` / `nameKey` rows. Composed partitions series with `areas` / `bars` / `lines`. Pass `title` / `description` for the chart region; series `config.label` for legend and tooltip text.
+`DuneAreaChart` / `DuneBarChart` / `DunePieChart` / `DuneRadarChart` / `DuneRadialChart` / `DuneComposedChart` share `fill` / `pixel` / `config`. `DuneLineChart` is stepped pixel stroke only (no fill wave). Pie and radial use Recharts `dataKey` / `nameKey` rows. Composed partitions series with `areas` / `bars` / `lines`. Horizontal bars: `chartProps={{ layout: 'vertical' }}` on `DuneBarChart`. Pass `title` / `description` for the chart region; series `config.label` for legend and tooltip text.

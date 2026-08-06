@@ -155,8 +155,12 @@ export function DuneBarChart<T extends Record<string, unknown>>({
     );
   };
 
-  const { accessibilityLayer: chartAccessibilityLayer = true, ...restChartProps } =
-    chartProps ?? {};
+  const {
+    accessibilityLayer: chartAccessibilityLayer = true,
+    layout: barLayout = 'horizontal',
+    ...restChartProps
+  } = chartProps ?? {};
+  const isHorizontalBars = barLayout === 'vertical';
 
   return (
     <DuneChartContainer
@@ -170,29 +174,65 @@ export function DuneBarChart<T extends Record<string, unknown>>({
     >
       <BarChart
         data={[...data]}
-        margin={{ top: 12, right: 16, left: 4, bottom: 4 }}
+        margin={
+          isHorizontalBars
+            ? { top: 12, right: 16, left: 8, bottom: 4 }
+            : { top: 12, right: 16, left: 4, bottom: 4 }
+        }
         accessibilityLayer={chartAccessibilityLayer}
+        layout={barLayout}
         {...restChartProps}
       >
-        <CartesianGrid stroke="var(--dune-grid)" strokeWidth={1} vertical={false} />
-        <XAxis
-          dataKey={index}
-          stroke="var(--dune-tick)"
-          tick={{ fill: 'var(--dune-muted-text)', fontSize: 11 }}
-          tickLine={false}
-          axisLine={{ stroke: 'var(--dune-border)', strokeWidth: 2 }}
-          dy={4}
-          {...xAxisProps}
+        <CartesianGrid
+          stroke="var(--dune-grid)"
+          strokeWidth={1}
+          vertical={isHorizontalBars}
+          horizontal={!isHorizontalBars}
         />
-        <YAxis
-          stroke="var(--dune-tick)"
-          tick={{ fill: 'var(--dune-muted-text)', fontSize: 11 }}
-          tickLine={false}
-          axisLine={false}
-          width={36}
-          domain={[0, 'auto']}
-          {...yAxisProps}
-        />
+        {isHorizontalBars ? (
+          <>
+            <XAxis
+              type="number"
+              stroke="var(--dune-tick)"
+              tick={{ fill: 'var(--dune-muted-text)', fontSize: 11 }}
+              tickLine={false}
+              axisLine={{ stroke: 'var(--dune-border)', strokeWidth: 2 }}
+              domain={[0, 'auto']}
+              {...xAxisProps}
+            />
+            <YAxis
+              type="category"
+              dataKey={index}
+              stroke="var(--dune-tick)"
+              tick={{ fill: 'var(--dune-muted-text)', fontSize: 11 }}
+              tickLine={false}
+              axisLine={false}
+              width={72}
+              {...yAxisProps}
+            />
+          </>
+        ) : (
+          <>
+            <XAxis
+              dataKey={index}
+              stroke="var(--dune-tick)"
+              tick={{ fill: 'var(--dune-muted-text)', fontSize: 11 }}
+              tickLine={false}
+              axisLine={{ stroke: 'var(--dune-border)', strokeWidth: 2 }}
+              dy={4}
+              {...xAxisProps}
+            />
+            <YAxis
+              stroke="var(--dune-tick)"
+              tick={{ fill: 'var(--dune-muted-text)', fontSize: 11 }}
+              tickLine={false}
+              axisLine={false}
+              width={36}
+              domain={[0, 'auto']}
+              {...yAxisProps}
+            />
+          </>
+        )}
 
         {paintsReady ? (
           <PixelBarPlotLayer
@@ -201,6 +241,7 @@ export function DuneBarChart<T extends Record<string, unknown>>({
             indexValues={indexValues}
             pixel={pixel}
             fill={fill}
+            layout={barLayout}
           />
         ) : null}
 

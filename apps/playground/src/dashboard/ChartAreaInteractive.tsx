@@ -222,6 +222,33 @@ export function ChartBarSimple({ fill = 'bands', pixel = 2 }: ChartControls) {
   );
 }
 
+/** Horizontal pixel bars (`layout="vertical"` on Recharts). */
+export function ChartBarHorizontal({ fill = 'bands', pixel = 2 }: ChartControls) {
+  const { data, rangeToggle } = useRangeData();
+
+  return (
+    <ChartCard
+      title="Horizontal bars"
+      description="Categories on Y — melange as pixel rows."
+      actions={rangeToggle}
+    >
+      <DuneBarChart<ThroughputRow>
+        data={data}
+        index="month"
+        categories={['melange']}
+        height={320}
+        title="Horizontal bars"
+        description="Single-series horizontal melange bars."
+        config={throughputConfig}
+        fill={fill}
+        pixel={pixel}
+        valueFormatter={(value) => String(value)}
+        chartProps={{ layout: 'vertical' }}
+      />
+    </ChartCard>
+  );
+}
+
 /** Multi-series stepped pixel lines. */
 export function ChartLineMulti({ pixel = 2 }: ChartControls) {
   const { data, rangeToggle } = useRangeData();
@@ -436,6 +463,7 @@ export function ChartAreaInteractive(props: ChartControls) {
       <ChartAreaExpand {...props} />
       <ChartBarStacked {...props} />
       <ChartBarSimple {...props} />
+      <ChartBarHorizontal {...props} />
       <ChartLineMulti {...props} />
       <ChartLineSimple {...props} />
       <ChartPieSimple {...props} />

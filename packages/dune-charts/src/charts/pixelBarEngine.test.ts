@@ -15,6 +15,10 @@ function linearYScale(plotBottom: number, pixelsPerUnit: number) {
   return (value: number) => plotBottom - value * pixelsPerUnit;
 }
 
+function identityValueScale(value: number) {
+  return value;
+}
+
 describe('snapBarWidth', () => {
   it('snaps down to the pixel grid with a minimum of one cell', () => {
     expect(snapBarWidth(17, 4)).toBe(16);
@@ -82,11 +86,6 @@ describe('computePixelBarPlotLayout', () => {
     const g0 = layout!.groups[0];
     expect(g0.segments[0]?.x).toBe(g0.segments[1]?.x);
     expect(g0.segments[0]?.cellCount).toBe(5); // 20px / 4
-    expect(g0.segments[1]?.cellCount).toBe(8); // 30px / 4? 50-20=30 → 7.5 → 8?
-    // 20 cells height: bottom at 80, top at 80-20=60 for a (20 units)
-    // b: upper 50 → y=50, lower 20 → y=80; height 30 → 30/4 = 7.5 → round 8?
-    // snapYFromBaseline: round((baseline-y)/pixel)*pixel
-    // Actually Math.round(30/4)=8 cells. OK.
     expect(g0.segments[1]?.cellCount).toBe(8);
   });
 
@@ -104,5 +103,51 @@ describe('computePixelBarPlotLayout', () => {
     expect(segs).toHaveLength(2);
     expect(segs[1]?.x).toBeGreaterThan(segs[0]?.x);
     expect(segs[0]?.width).toBe(segs[1]?.width);
+    expect(segs[0]?.crest).toBe('top');
+  });
+
+  it('lays out horizontal bars along X with crest on the right', () => {
+    const indexValues = ['a', 'b'];
+    const centers = [30, 70];
+    const categoryScale = (value: unknown) => {
+      const i = indexValues.indexOf(String(value));
+      return i >= 0 ? centers[i] : undefined;
+    };
+    // value 40 → x = 40 when scale is identity from plot.x
+    const layout = computePixelBarPlotLayout(
+      [makeSeries({ name: 'melange', values: [40, 40] })],
+      plot,
+      identityValueScale,
+      2,
+      { pixel: 4, indexValues, categoryScale, layout: 'vertical' },
+    );
+
+    expect(layout).not.toBeNull();
+    expect(layout!.layout).toBe('vertical');
+    expect(layout!.groups).toHaveLength(2);
+    for (const group of layout!.groups) {
+      const seg = group.segments[0];
+      expect(seg?.crest).toBe('right');
+      expect(seg?.cellCount).toBe(10);
+      expect(seg?.height % 4).toBe(0);
+      expect(seg?.width).toBe(40);
+    }
+  });
+
+  it('groups unstacked horizontal bars along Y', () => {
+    const layout = computePixelBarPlotLayout(
+      [makeSeries({ name: 'a', values: [40] }), makeSeries({ name: 'b', values: [40] })],
+      plot,
+      identityValueScale,
+      1,
+      { pixel: 4, layout: 'vertical' },
+    );
+
+    expect(layout).not.toBeNull();
+    const segs = layout!.groups[0].segments;
+    expect(segs).toHaveLength(2);
+    expect(segs[1]?.y).toBeGreaterThan(segs[0]?.y);
+    expect(segs[0]?.height).toBe(segs[1]?.height);
+    expect(segs[0]?.crest).toBe('right');
   });
 });

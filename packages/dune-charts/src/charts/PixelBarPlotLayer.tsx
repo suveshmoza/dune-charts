@@ -2,7 +2,7 @@ import { useLayoutEffect, useMemo, useRef } from 'react';
 import { usePlotArea, useXAxisScale, useYAxisScale } from 'recharts';
 
 import { paintPixelBars, type DitherTileCache } from './paintPixelBars';
-import { computePixelBarPlotLayout } from './pixelBarEngine';
+import { computePixelBarPlotLayout, type PixelBarChartLayout } from './pixelBarEngine';
 import type { PixelWaveFill, PixelWaveSeries } from './pixelWaveEngine';
 
 export type PixelBarPlotLayerProps = {
@@ -11,6 +11,8 @@ export type PixelBarPlotLayerProps = {
   indexValues?: readonly unknown[];
   pixel?: number;
   fill?: PixelWaveFill;
+  /** Recharts BarChart layout. Default `horizontal` (vertical bars). */
+  layout?: PixelBarChartLayout;
 };
 
 /**
@@ -23,6 +25,7 @@ export function PixelBarPlotLayer({
   indexValues,
   pixel = 2,
   fill = 'bands',
+  layout = 'horizontal',
 }: PixelBarPlotLayerProps) {
   const plot = usePlotArea();
   const yScale = useYAxisScale();
@@ -30,26 +33,51 @@ export function PixelBarPlotLayer({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ditherTilesRef = useRef<DitherTileCache>(new Map());
 
-  const layout = useMemo(() => {
-    if (plot == null || yScale == null) return null;
-    return computePixelBarPlotLayout(series, plot, (value) => Number(yScale(value)), pointCount, {
+  const barLayout = useMemo(() => {
+    if (plot == null) return null;
+
+    if (layout === 'horizontal') {
+      if (yScale == null) return null;
+      return computePixelBarPlotLayout(
+        series,
+        plot,
+        (value) => Number(yScale(value)),
+        pointCount,
+        {
+          pixel,
+          indexValues,
+          layout,
+          categoryScale:
+            xScale == null
+              ? undefined
+              : (value, options) => {
+                  const result = xScale(value, options);
+                  return result == null ? undefined : result;
+                },
+        },
+      );
+    }
+
+    if (xScale == null) return null;
+    return computePixelBarPlotLayout(series, plot, (value) => Number(xScale(value)), pointCount, {
       pixel,
       indexValues,
-      xScale:
-        xScale == null
+      layout,
+      categoryScale:
+        yScale == null
           ? undefined
           : (value, options) => {
-              const result = xScale(value, options);
+              const result = yScale(value, options);
               return result == null ? undefined : result;
             },
     });
-  }, [plot, yScale, xScale, series, pointCount, pixel, indexValues]);
+  }, [plot, yScale, xScale, series, pointCount, pixel, indexValues, layout]);
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
-    if (canvas == null || layout == null) return;
+    if (canvas == null || barLayout == null) return;
 
-    const { plotW, plotH } = layout;
+    const { plotW, plotH } = barLayout;
     const dpr = typeof window !== 'undefined' ? Math.max(1, window.devicePixelRatio || 1) : 1;
     const cssW = Math.max(1, plotW);
     const cssH = Math.max(1, plotH);
@@ -64,16 +92,16 @@ export function PixelBarPlotLayer({
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     paintPixelBars(ctx, {
-      layout,
+      layout: barLayout,
       series,
       fill,
       ditherTiles: ditherTilesRef.current,
     });
-  }, [layout, series, fill]);
+  }, [barLayout, series, fill]);
 
-  if (layout == null || plot == null) return null;
+  if (barLayout == null || plot == null) return null;
 
-  const { plotW, plotH } = layout;
+  const { plotW, plotH } = barLayout;
 
   return (
     <g className="dune-pixel-bar-layer" pointerEvents="none" aria-hidden>
