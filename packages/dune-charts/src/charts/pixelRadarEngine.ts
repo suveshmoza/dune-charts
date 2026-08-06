@@ -1,7 +1,7 @@
 import { cellAngleDeg, normalizeDeg } from './pixelPieEngine';
 import type { PixelWaveSeries, PlotRect } from './pixelWaveEngine';
 
-const DEFAULT_PIXEL = 4;
+const DEFAULT_PIXEL = 2;
 /** Match Recharts radar default outer feel (~80% of half-min plot). */
 const OUTER_FRACTION = 0.8;
 

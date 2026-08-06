@@ -196,7 +196,7 @@ describe('computePixelWavePlotLayout', () => {
     ).toBeNull();
   });
 
-  it('uses default pixel 4 and snaps column count to plot width', () => {
+  it('uses default pixel 2 and snaps column count to plot width', () => {
     const layout = computePixelWavePlotLayout(
       [makeSeries({ name: 'a', values: [10, 20, 30] })],
       plot,
@@ -204,8 +204,8 @@ describe('computePixelWavePlotLayout', () => {
       3,
     );
     expect(layout).not.toBeNull();
-    expect(layout!.pixel).toBe(4);
-    expect(layout!.columns).toHaveLength(10); // floor(40/4)
+    expect(layout!.pixel).toBe(2);
+    expect(layout!.columns).toHaveLength(20); // floor(40/2)
   });
 
   it('spans dataIndex 0…pointCount-1 without xScale', () => {

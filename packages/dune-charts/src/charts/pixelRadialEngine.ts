@@ -10,7 +10,7 @@ import {
 } from './pixelPieEngine';
 import type { PixelWaveBands, PlotRect } from './pixelWaveEngine';
 
-const DEFAULT_PIXEL = 4;
+const DEFAULT_PIXEL = 2;
 const DEFAULT_INNER = '30%';
 const DEFAULT_OUTER = '80%';
 

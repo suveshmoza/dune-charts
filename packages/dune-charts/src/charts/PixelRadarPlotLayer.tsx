@@ -20,7 +20,7 @@ export type PixelRadarPlotLayerProps = {
 export function PixelRadarPlotLayer({
   series,
   pointCount,
-  pixel = 4,
+  pixel = 2,
   fill = 'bands',
   domainMax,
 }: PixelRadarPlotLayerProps) {

@@ -35,7 +35,7 @@ import '@suveshmoza/dune-charts/styles.css';
       water: { label: 'Water' },
     }}
     fill="dither"
-    pixel={4}
+    pixel={2}
     seriesProps={{
       melange: { stackId: 'ops' },
       water: { stackId: 'ops' },
@@ -48,7 +48,7 @@ import '@suveshmoza/dune-charts/styles.css';
 | ---------------------------------- | ------------------------------------------------------------- |
 | `theme` (provider)                 | `dune` \| `night-dune`                                        |
 | `fill`                             | Area/bar/pie/radar/radial/composed: `bands` (default) \| `dither` |
-| `pixel`                            | Cell size in CSS px (default `4`)                             |
+| `pixel`                            | Cell size in CSS px (default `2`)                             |
 | `config`                           | Per-series / slice `label`, `color`, optional `bands`         |
 | `seriesProps` / `chartProps`       | Recharts pass-throughs (`stackId`, `stackOffset`, …)          |
 | pie / radial `dataKey` / `nameKey` | Recharts-style row data                                       |

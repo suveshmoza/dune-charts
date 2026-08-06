@@ -21,7 +21,7 @@ export function PixelBarPlotLayer({
   series,
   pointCount,
   indexValues,
-  pixel = 4,
+  pixel = 2,
   fill = 'bands',
 }: PixelBarPlotLayerProps) {
   const plot = usePlotArea();

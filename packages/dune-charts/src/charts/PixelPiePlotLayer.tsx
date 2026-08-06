@@ -22,7 +22,7 @@ export type PixelPiePlotLayerProps = {
  */
 export function PixelPiePlotLayer({
   slices,
-  pixel = 4,
+  pixel = 2,
   fill = 'bands',
   layoutOptions,
 }: PixelPiePlotLayerProps) {

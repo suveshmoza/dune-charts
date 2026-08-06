@@ -240,7 +240,7 @@ export type PixelWaveXScale = (
   options?: { position?: 'start' | 'middle' | 'end' },
 ) => number | undefined;
 
-const DEFAULT_PIXEL = 4;
+const DEFAULT_PIXEL = 2;
 
 export function hashString(str: string): number {
   let h = 2166136261;

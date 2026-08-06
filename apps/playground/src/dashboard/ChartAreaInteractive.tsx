@@ -86,7 +86,7 @@ const expandStackProps = {
 } satisfies Record<'melange' | 'water' | 'thrift', { stackId: string }>;
 
 /** Stacked multi-series area with range toggle. */
-export function ChartAreaStacked({ fill = 'bands', pixel = 4 }: ChartControls) {
+export function ChartAreaStacked({ fill = 'bands', pixel = 2 }: ChartControls) {
   const { data, rangeToggle } = useRangeData();
 
   return (
@@ -113,7 +113,7 @@ export function ChartAreaStacked({ fill = 'bands', pixel = 4 }: ChartControls) {
 }
 
 /** Single-series area. */
-export function ChartAreaSimple({ fill = 'bands', pixel = 4 }: ChartControls) {
+export function ChartAreaSimple({ fill = 'bands', pixel = 2 }: ChartControls) {
   const { data, rangeToggle } = useRangeData();
 
   return (
@@ -139,7 +139,7 @@ export function ChartAreaSimple({ fill = 'bands', pixel = 4 }: ChartControls) {
 }
 
 /** 100% stacked share of three series. */
-export function ChartAreaExpand({ fill = 'bands', pixel = 4 }: ChartControls) {
+export function ChartAreaExpand({ fill = 'bands', pixel = 2 }: ChartControls) {
   const { data, rangeToggle } = useRangeData();
 
   return (
@@ -170,7 +170,7 @@ export function ChartAreaExpand({ fill = 'bands', pixel = 4 }: ChartControls) {
 }
 
 /** Stacked pixel bars. */
-export function ChartBarStacked({ fill = 'bands', pixel = 4 }: ChartControls) {
+export function ChartBarStacked({ fill = 'bands', pixel = 2 }: ChartControls) {
   const { data, rangeToggle } = useRangeData();
 
   return (
@@ -197,7 +197,7 @@ export function ChartBarStacked({ fill = 'bands', pixel = 4 }: ChartControls) {
 }
 
 /** Single-series pixel bar. */
-export function ChartBarSimple({ fill = 'bands', pixel = 4 }: ChartControls) {
+export function ChartBarSimple({ fill = 'bands', pixel = 2 }: ChartControls) {
   const { data, rangeToggle } = useRangeData();
 
   return (
@@ -223,7 +223,7 @@ export function ChartBarSimple({ fill = 'bands', pixel = 4 }: ChartControls) {
 }
 
 /** Multi-series stepped pixel lines. */
-export function ChartLineMulti({ pixel = 4 }: ChartControls) {
+export function ChartLineMulti({ pixel = 2 }: ChartControls) {
   const { data, rangeToggle } = useRangeData();
 
   return (
@@ -248,7 +248,7 @@ export function ChartLineMulti({ pixel = 4 }: ChartControls) {
 }
 
 /** Single-series stepped pixel line. */
-export function ChartLineSimple({ pixel = 4 }: ChartControls) {
+export function ChartLineSimple({ pixel = 2 }: ChartControls) {
   const { data, rangeToggle } = useRangeData();
 
   return (
@@ -283,7 +283,7 @@ const SHARE_SLICES: ShareSlice[] = [
 ];
 
 /** Pixel pie wedges. */
-export function ChartPieSimple({ fill = 'bands', pixel = 4 }: ChartControls) {
+export function ChartPieSimple({ fill = 'bands', pixel = 2 }: ChartControls) {
   return (
     <ChartCard title="Pixel pie" description="Chunky wedges — crest→depth bands from the rim.">
       <DunePieChart<ShareSlice>
@@ -303,7 +303,7 @@ export function ChartPieSimple({ fill = 'bands', pixel = 4 }: ChartControls) {
 }
 
 /** Pixel donut via pieProps.innerRadius. */
-export function ChartPieDonut({ fill = 'bands', pixel = 4 }: ChartControls) {
+export function ChartPieDonut({ fill = 'bands', pixel = 2 }: ChartControls) {
   return (
     <ChartCard title="Pixel donut" description="Same wedges with an inner hole.">
       <DunePieChart<ShareSlice>
@@ -340,7 +340,7 @@ const RADAR_DATA: RadarRow[] = [
 ];
 
 /** Pixel radar polygons. */
-export function ChartRadarSimple({ fill = 'bands', pixel = 4 }: ChartControls) {
+export function ChartRadarSimple({ fill = 'bands', pixel = 2 }: ChartControls) {
   return (
     <ChartCard title="Pixel radar" description="Filled spider polygons — crest→depth from the rim.">
       <DuneRadarChart<RadarRow>
@@ -360,7 +360,7 @@ export function ChartRadarSimple({ fill = 'bands', pixel = 4 }: ChartControls) {
 }
 
 /** Pixel radial ring arcs. */
-export function ChartRadialSimple({ fill = 'bands', pixel = 4 }: ChartControls) {
+export function ChartRadialSimple({ fill = 'bands', pixel = 2 }: ChartControls) {
   return (
     <ChartCard title="Pixel radial" description="Concentric ring arcs — value sweeps the angle.">
       <DuneRadialChart<ShareSlice>
@@ -380,7 +380,7 @@ export function ChartRadialSimple({ fill = 'bands', pixel = 4 }: ChartControls) 
 }
 
 /** Semi-circle pixel radial. */
-export function ChartRadialSemi({ fill = 'bands', pixel = 4 }: ChartControls) {
+export function ChartRadialSemi({ fill = 'bands', pixel = 2 }: ChartControls) {
   return (
     <ChartCard title="Pixel radial (semi)" description="Same arcs clipped to a half ring.">
       <DuneRadialChart<ShareSlice>
@@ -401,7 +401,7 @@ export function ChartRadialSemi({ fill = 'bands', pixel = 4 }: ChartControls) {
 }
 
 /** Bars + line on shared scales. */
-export function ChartComposedBarLine({ fill = 'bands', pixel = 4 }: ChartControls) {
+export function ChartComposedBarLine({ fill = 'bands', pixel = 2 }: ChartControls) {
   const { data, rangeToggle } = useRangeData();
 
   return (

@@ -114,7 +114,7 @@ type DuneCartesianBaseProps<T> = {
   categories: readonly DataKey<T>[];
   index: DataKey<T>;
   config?: Partial<Record<DataKey<T>, DuneSeriesConfig>>;
-  /** Cell size in CSS pixels (default 4). Clamped to ≥ 1. */
+  /** Cell size in CSS pixels (default 2). Clamped to ≥ 1. */
   pixel?: number;
   className?: string;
   height?: DuneChartSize;
@@ -183,7 +183,7 @@ export type DunePieChartProps<T extends Record<string, unknown>> = {
   config?: Partial<Record<string, DuneSeriesConfig>>;
   /** Pixel fill style. `bands` (default) or Bayer `dither` mesh. */
   fill?: PixelWaveFill;
-  /** Cell size in CSS pixels (default 4). Clamped to ≥ 1. */
+  /** Cell size in CSS pixels (default 2). Clamped to ≥ 1. */
   pixel?: number;
   className?: string;
   height?: DuneChartSize;
@@ -206,7 +206,7 @@ export type DuneRadarChartProps<T extends Record<string, unknown>> = {
   config?: Partial<Record<DataKey<T>, DuneSeriesConfig>>;
   /** Pixel fill style. `bands` (default) or Bayer `dither` mesh. */
   fill?: PixelWaveFill;
-  /** Cell size in CSS pixels (default 4). Clamped to ≥ 1. */
+  /** Cell size in CSS pixels (default 2). Clamped to ≥ 1. */
   pixel?: number;
   className?: string;
   height?: DuneChartSize;
@@ -234,7 +234,7 @@ export type DuneRadialChartProps<T extends Record<string, unknown>> = {
   config?: Partial<Record<string, DuneSeriesConfig>>;
   /** Pixel fill style. `bands` (default) or Bayer `dither` mesh. */
   fill?: PixelWaveFill;
-  /** Cell size in CSS pixels (default 4). Clamped to ≥ 1. */
+  /** Cell size in CSS pixels (default 2). Clamped to ≥ 1. */
   pixel?: number;
   className?: string;
   height?: DuneChartSize;

@@ -26,7 +26,7 @@ export function PixelWavePlotLayer({
   series,
   pointCount,
   indexValues,
-  pixel = 4,
+  pixel = 2,
   fill = 'bands',
 }: PixelWavePlotLayerProps) {
   const plot = usePlotArea();

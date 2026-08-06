@@ -30,7 +30,7 @@ function useIsMobile() {
 export default function Dashboard() {
   const [theme, setTheme] = useState<DuneTheme>('dune');
   const [fill, setFill] = useState<PixelWaveFill>('dither');
-  const [pixel, setPixel] = useState<PixelSize>(4);
+  const [pixel, setPixel] = useState<PixelSize>(2);
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(() =>
     typeof window !== 'undefined' ? !window.matchMedia(MOBILE_MQ).matches : true,

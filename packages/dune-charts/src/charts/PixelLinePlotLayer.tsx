@@ -20,7 +20,7 @@ export function PixelLinePlotLayer({
   series,
   pointCount,
   indexValues,
-  pixel = 4,
+  pixel = 2,
 }: PixelLinePlotLayerProps) {
   const plot = usePlotArea();
   const yScale = useYAxisScale();

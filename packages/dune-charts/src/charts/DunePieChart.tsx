@@ -13,7 +13,7 @@ export type { DunePieChartProps };
 
 const DUNE_EASE = 'ease-out';
 const DUNE_DURATION = 520;
-const DEFAULT_PIXEL = 4;
+const DEFAULT_PIXEL = 2;
 const DEFAULT_EMPTY_MESSAGE = 'No data to display';
 
 function clampPixel(pixel: number | undefined): number {

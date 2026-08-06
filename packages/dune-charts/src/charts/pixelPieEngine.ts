@@ -1,7 +1,7 @@
 import type { DuneSeriesConfig } from '../types';
 import { bandsFromColor, type PixelWaveBands, type PlotRect } from './pixelWaveEngine';
 
-const DEFAULT_PIXEL = 4;
+const DEFAULT_PIXEL = 2;
 const DEFAULT_OUTER = '80%';
 
 export type PixelPieSlice = {

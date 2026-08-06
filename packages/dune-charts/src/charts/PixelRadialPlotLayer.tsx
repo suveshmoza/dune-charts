@@ -30,7 +30,7 @@ export type PixelRadialPlotLayerProps = {
 export function PixelRadialPlotLayer({
   bars,
   hits,
-  pixel = 4,
+  pixel = 2,
   fill = 'bands',
   trackStartAngle = 0,
   trackEndAngle = 360,

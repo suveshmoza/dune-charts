@@ -5,7 +5,7 @@ import {
   type PlotRect,
 } from './pixelWaveEngine';
 
-const DEFAULT_PIXEL = 4;
+const DEFAULT_PIXEL = 2;
 
 export type PixelLineCell = {
   /** Absolute chart X of the cell’s top-left corner. */

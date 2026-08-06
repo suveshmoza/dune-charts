@@ -5,7 +5,7 @@ import {
   type PlotRect,
 } from './pixelWaveEngine';
 
-const DEFAULT_PIXEL = 4;
+const DEFAULT_PIXEL = 2;
 /** Fraction of category band used by the bar block (rest is gap). */
 const BAR_BAND_FILL = 0.62;
 

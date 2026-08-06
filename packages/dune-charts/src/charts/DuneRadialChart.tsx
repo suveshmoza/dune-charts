@@ -40,7 +40,7 @@ export type { DuneRadialChartProps };
 
 const DUNE_EASE = 'ease-out';
 const DUNE_DURATION = 520;
-const DEFAULT_PIXEL = 4;
+const DEFAULT_PIXEL = 2;
 const DEFAULT_EMPTY_MESSAGE = 'No data to display';
 const DEFAULT_INNER_RADIUS = '30%';
 const DEFAULT_OUTER_RADIUS = '80%';
