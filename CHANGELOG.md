@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.2
+
+- `DuneRadarChart` — pixel polar fill (`bands` | `dither`)
+- `DuneRadialChart` — pixel ring arcs (`bands` | `dither`)
+
 ## 0.0.1
 
 - Initial public release
