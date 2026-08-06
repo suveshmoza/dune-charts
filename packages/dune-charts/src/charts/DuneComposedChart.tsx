@@ -14,7 +14,7 @@ import {
 
 import { DuneChartContainer } from '../primitives/DuneChartContainer';
 import { useDuneTheme } from '../provider/DuneChartProvider';
-import type { DataKey, DuneComposedChartProps } from '../types';
+import type { DuneComposedChartProps } from '../types';
 import { usePrefersReducedMotion } from '../utils/reducedMotion';
 import { buildSeriesStyle, getSeriesVar, resolveSeriesBaseColors } from '../utils/series';
 import { buildSeriesList } from './buildSeriesList';
@@ -79,10 +79,7 @@ export function DuneComposedChart<T extends Record<string, unknown>>({
   const areas = useMemo(() => areasProp ?? [], [areasProp]);
   const bars = useMemo(() => barsProp ?? [], [barsProp]);
   const lines = useMemo(() => linesProp ?? [], [linesProp]);
-  const categories = useMemo(
-    () => composeSeriesKeys(areas, bars, lines),
-    [areas, bars, lines],
-  );
+  const categories = useMemo(() => composeSeriesKeys(areas, bars, lines), [areas, bars, lines]);
 
   const seriesStyle = buildSeriesStyle(categories, config);
   const [baseColors, setBaseColors] = useState<string[]>([]);
@@ -189,9 +186,7 @@ export function DuneComposedChart<T extends Record<string, unknown>>({
         <ul className="dune-tooltip__list">
           {payload.map((entry) => {
             const key = String(entry.dataKey ?? entry.name ?? '');
-            const seriesKey = categories.find((category) => category === key) as
-              | DataKey<T>
-              | undefined;
+            const seriesKey = categories.find((category) => category === key);
             const raw = entry.value;
             const numeric = typeof raw === 'number' ? raw : Number(raw);
             const formatted =

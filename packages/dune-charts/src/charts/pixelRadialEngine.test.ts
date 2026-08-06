@@ -5,6 +5,7 @@ import {
   angleInDirectedSector,
   buildRadialBarList,
   computePixelRadialLayout,
+  computePixelRadialLayoutFromHits,
   computeRadialTracks,
   type PixelRadialBar,
 } from './pixelRadialEngine';
@@ -26,7 +27,7 @@ describe('angleInDirectedSector', () => {
 });
 
 describe('computeRadialTracks', () => {
-  it('places first bar outermost and sweeps by value/max', () => {
+  it('places first bar innermost and sweeps by value/max', () => {
     const tracks = computeRadialTracks(
       [
         { name: 'a', value: 50 },
@@ -43,10 +44,10 @@ describe('computeRadialTracks', () => {
 
     expect(tracks).toHaveLength(2);
     expect(tracks[0]?.name).toBe('a');
-    expect(tracks[0]?.rOuter).toBe(80);
+    expect(tracks[0]?.rInner).toBe(20);
     expect(tracks[0]?.endAngle - tracks[0].startAngle).toBeCloseTo(180, 5);
     expect(tracks[1]?.name).toBe('b');
-    expect(tracks[1]?.rOuter).toBeLessThan(tracks[0].rInner);
+    expect(tracks[1]?.rInner).toBeGreaterThan(tracks[0].rOuter);
     expect(tracks[1]?.endAngle - tracks[1].startAngle).toBeCloseTo(360, 5);
   });
 
@@ -141,7 +142,7 @@ describe('computePixelRadialLayout', () => {
     }
   });
 
-  it('only paints the swept wedge for partial values', () => {
+  it('paints value wedge plus gray track remainder for partial values', () => {
     const layout = computePixelRadialLayout([makeBar('half', 50), makeBar('full', 100)], plot, {
       pixel: 4,
       innerRadius: 15,
@@ -151,14 +152,72 @@ describe('computePixelRadialLayout', () => {
     });
     expect(layout).not.toBeNull();
     const halfCells = layout!.cells.filter((c) => c.barName === 'half');
-    expect(halfCells.length).toBeGreaterThan(0);
-    // Outer track (half) sweeps 0→180° — every cell angle must fall in that span.
-    for (const cell of halfCells) {
+    const halfValue = halfCells.filter((c) => c.kind === 'value');
+    const halfTrack = halfCells.filter((c) => c.kind === 'track');
+    expect(halfValue.length).toBeGreaterThan(0);
+    expect(halfTrack.length).toBeGreaterThan(0);
+    // Value sweep is 0→180°; track remainder is 180→360°.
+    for (const cell of halfValue) {
       const mx = cell.x + layout!.pixel / 2;
       const my = cell.y + layout!.pixel / 2;
       const ang = normalizeDeg(cellAngleDeg(layout!.cx, layout!.cy, mx, my));
       expect(ang).toBeGreaterThanOrEqual(0);
       expect(ang).toBeLessThan(180);
+    }
+    for (const cell of halfTrack) {
+      const mx = cell.x + layout!.pixel / 2;
+      const my = cell.y + layout!.pixel / 2;
+      const ang = normalizeDeg(cellAngleDeg(layout!.cx, layout!.cy, mx, my));
+      expect(ang).toBeGreaterThanOrEqual(180);
+      expect(ang).toBeLessThan(360);
+    }
+  });
+});
+
+describe('computePixelRadialLayoutFromHits', () => {
+  const plot = { x: 0, y: 0, width: 100, height: 100 };
+
+  it('paints using Recharts sector radii and angles', () => {
+    const layout = computePixelRadialLayoutFromHits(
+      [
+        {
+          barName: 'inner',
+          value: 1,
+          cx: 50,
+          cy: 50,
+          rInner: 20,
+          rOuter: 30,
+          startAngle: 0,
+          endAngle: 360,
+        },
+        {
+          barName: 'outer',
+          value: 1,
+          cx: 50,
+          cy: 50,
+          rInner: 34,
+          rOuter: 44,
+          startAngle: 0,
+          endAngle: 90,
+        },
+      ],
+      plot,
+      4,
+    );
+    expect(layout).not.toBeNull();
+    expect(layout!.tracks.map((t) => t.name)).toEqual(['inner', 'outer']);
+    expect(layout!.cells.some((c) => c.barName === 'inner')).toBe(true);
+    expect(layout!.cells.some((c) => c.barName === 'outer')).toBe(true);
+    const outerValue = layout!.cells.filter((c) => c.barName === 'outer' && c.kind === 'value');
+    const outerTrack = layout!.cells.filter((c) => c.barName === 'outer' && c.kind === 'track');
+    expect(outerValue.length).toBeGreaterThan(0);
+    expect(outerTrack.length).toBeGreaterThan(0);
+    for (const cell of outerValue) {
+      const mx = cell.x + layout!.pixel / 2;
+      const my = cell.y + layout!.pixel / 2;
+      const ang = normalizeDeg(cellAngleDeg(layout!.cx, layout!.cy, mx, my));
+      expect(ang).toBeGreaterThanOrEqual(0);
+      expect(ang).toBeLessThan(90);
     }
   });
 });

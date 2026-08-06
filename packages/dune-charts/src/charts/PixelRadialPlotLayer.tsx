@@ -3,28 +3,38 @@ import { usePlotArea } from 'recharts';
 
 import { paintPixelRadial, type DitherTileCache } from './paintPixelRadial';
 import {
-  computePixelRadialLayout,
+  computePixelRadialLayoutFromHits,
   type PixelRadialBar,
-  type PixelRadialLayoutOptions,
+  type PixelRadialHitSector,
 } from './pixelRadialEngine';
 import type { PixelWaveFill } from './pixelWaveEngine';
 
 export type PixelRadialPlotLayerProps = {
   bars: readonly PixelRadialBar[];
+  /** Recharts RadialBar sector geometry — required for paint/hit alignment. */
+  hits?: readonly PixelRadialHitSector[];
   pixel?: number;
   fill?: PixelWaveFill;
-  layoutOptions?: Omit<PixelRadialLayoutOptions, 'pixel'>;
+  /** Full ring domain for gray remainders (chart start/end angles). */
+  trackStartAngle?: number;
+  trackEndAngle?: number;
+  /** Resolved concrete color for unfilled track remainder. */
+  trackColor?: string;
 };
 
 /**
  * Draws chunky pixel radial-bar arcs inside the Recharts plot area via Canvas2D.
  * Pointer events stay on RadialBar sectors for tooltip / legend.
+ * Paints only when `hits` mirror Recharts sector geometry.
  */
 export function PixelRadialPlotLayer({
   bars,
+  hits,
   pixel = 4,
   fill = 'bands',
-  layoutOptions,
+  trackStartAngle = 0,
+  trackEndAngle = 360,
+  trackColor,
 }: PixelRadialPlotLayerProps) {
   const plot = usePlotArea();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -32,11 +42,14 @@ export function PixelRadialPlotLayer({
 
   const layout = useMemo(() => {
     if (plot == null) return null;
-    return computePixelRadialLayout(bars, plot, {
-      pixel,
-      ...layoutOptions,
+    // Independent fallback is centered on the plot box and drifts from
+    // RadialBar sectors — only paint once hit geometry is available.
+    if (hits == null || hits.length === 0) return null;
+    return computePixelRadialLayoutFromHits(hits, plot, pixel, {
+      startAngle: trackStartAngle,
+      endAngle: trackEndAngle,
     });
-  }, [plot, bars, pixel, layoutOptions]);
+  }, [plot, hits, pixel, trackStartAngle, trackEndAngle]);
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
@@ -60,9 +73,10 @@ export function PixelRadialPlotLayer({
       layout,
       bars,
       fill,
+      trackColor,
       ditherTiles: ditherTilesRef.current,
     });
-  }, [layout, bars, fill]);
+  }, [layout, bars, fill, trackColor]);
 
   if (layout == null || plot == null) return null;
 
@@ -70,12 +84,27 @@ export function PixelRadialPlotLayer({
 
   return (
     <g className="dune-pixel-radial-layer" pointerEvents="none" aria-hidden>
-      <foreignObject x={plot.x} y={plot.y} width={plotW} height={plotH}>
-        <div style={{ width: plotW, height: plotH, margin: 0 }}>
+      <foreignObject
+        x={plot.x}
+        y={plot.y}
+        width={plotW}
+        height={plotH}
+        style={{ pointerEvents: 'none' }}
+      >
+        <div
+          style={{
+            width: plotW,
+            height: plotH,
+            margin: 0,
+            padding: 0,
+            overflow: 'hidden',
+            pointerEvents: 'none',
+          }}
+        >
           <canvas
             ref={canvasRef}
             aria-hidden="true"
-            style={{ display: 'block', width: plotW, height: plotH }}
+            style={{ display: 'block', width: plotW, height: plotH, pointerEvents: 'none' }}
           />
         </div>
       </foreignObject>

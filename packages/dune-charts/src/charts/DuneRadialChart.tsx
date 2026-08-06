@@ -1,11 +1,21 @@
-import { useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import {
+  useCallback,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
 import {
   Cell,
   Legend,
   PolarAngleAxis,
   RadialBar,
   RadialBarChart,
+  Sector,
   Tooltip,
+  type SectorProps,
   type TooltipContentProps,
 } from 'recharts';
 
@@ -13,8 +23,17 @@ import { DuneChartContainer } from '../primitives/DuneChartContainer';
 import { useDuneTheme } from '../provider/DuneChartProvider';
 import type { DuneRadialChartProps } from '../types';
 import { usePrefersReducedMotion } from '../utils/reducedMotion';
-import { buildSeriesStyle, getSeriesVar, resolveSeriesBaseColors } from '../utils/series';
-import { buildRadialBarList, type PixelRadialLayoutOptions } from './pixelRadialEngine';
+import {
+  buildSeriesStyle,
+  getSeriesVar,
+  resolveCssColor,
+  resolveSeriesBaseColors,
+} from '../utils/series';
+import {
+  buildRadialBarList,
+  radialHitsSignature,
+  type PixelRadialHitSector,
+} from './pixelRadialEngine';
 import { PixelRadialPlotLayer } from './PixelRadialPlotLayer';
 
 export type { DuneRadialChartProps };
@@ -38,6 +57,78 @@ function toCssSize(value: number | string | undefined): string | undefined {
 
 function barColorForIndex(index: number): string {
   return getSeriesVar(index);
+}
+
+function hitFromSectorProps(
+  props: SectorProps & { payload?: Record<string, unknown>; value?: unknown },
+  nameKey: string,
+): PixelRadialHitSector | null {
+  const {
+    cx,
+    cy,
+    innerRadius,
+    outerRadius,
+    startAngle,
+    endAngle,
+    payload,
+    value: rawValue,
+  } = props;
+  if (
+    typeof cx !== 'number' ||
+    typeof cy !== 'number' ||
+    typeof innerRadius !== 'number' ||
+    typeof outerRadius !== 'number' ||
+    typeof startAngle !== 'number' ||
+    typeof endAngle !== 'number'
+  ) {
+    return null;
+  }
+
+  const rawName = payload?.[nameKey];
+  const barName =
+    typeof rawName === 'string' || typeof rawName === 'number' || typeof rawName === 'boolean'
+      ? String(rawName)
+      : 'bar';
+  const numeric = typeof rawValue === 'number' ? rawValue : Number(rawValue);
+
+  return {
+    barName,
+    value: Number.isFinite(numeric) ? numeric : 0,
+    cx,
+    cy,
+    rInner: innerRadius,
+    rOuter: outerRadius,
+    startAngle,
+    endAngle,
+  };
+}
+
+type TransparentRadialSectorProps = SectorProps & {
+  nameKey: string;
+  onHit: (hit: PixelRadialHitSector) => void;
+};
+
+/**
+ * Invisible hit sector that reports Recharts geometry after layout so pixel
+ * paint can match hover targets (including during animation frames).
+ */
+function TransparentRadialSector({ nameKey, onHit, ...props }: TransparentRadialSectorProps) {
+  useLayoutEffect(() => {
+    const hit = hitFromSectorProps(
+      props as SectorProps & { payload?: Record<string, unknown>; value?: unknown },
+      nameKey,
+    );
+    if (hit != null) onHit(hit);
+  });
+
+  return (
+    <Sector
+      {...props}
+      fillOpacity={0}
+      stroke="none"
+      style={{ ...props.style, pointerEvents: 'all' }}
+    />
+  );
 }
 
 export function DuneRadialChart<T extends Record<string, unknown>>({
@@ -78,6 +169,8 @@ export function DuneRadialChart<T extends Record<string, unknown>>({
   );
   const seriesStyle = buildSeriesStyle(barNames, config);
   const [baseColors, setBaseColors] = useState<string[]>([]);
+  const [trackColor, setTrackColor] = useState('#eceae4');
+  const [hitSectors, setHitSectors] = useState<PixelRadialHitSector[]>([]);
   const emptyId = useId();
   const emptyTitleId = title ? `${emptyId}-title` : undefined;
   const emptyDescId = description ? `${emptyId}-description` : undefined;
@@ -90,10 +183,37 @@ export function DuneRadialChart<T extends Record<string, unknown>>({
       return;
     }
     setBaseColors(resolveSeriesBaseColors(host, barNames.length));
+    setTrackColor(resolveCssColor(host, 'var(--dune-track)'));
   }, [barNames, config, theme]);
 
+  const onHit = useCallback((hit: PixelRadialHitSector) => {
+    setHitSectors((prev) => {
+      const index = prev.findIndex((entry) => entry.barName === hit.barName);
+      if (index >= 0) {
+        const existing = prev[index];
+        if (
+          existing != null &&
+          radialHitsSignature([existing]) === radialHitsSignature([hit])
+        ) {
+          return prev;
+        }
+        const next = prev.slice();
+        next[index] = hit;
+        return next;
+      }
+      return [...prev, hit];
+    });
+  }, []);
+
+  const renderHitShape = useCallback(
+    (props: SectorProps) => (
+      <TransparentRadialSector {...props} nameKey={String(nameKey)} onHit={onHit} />
+    ),
+    [nameKey, onHit],
+  );
+
   const bars = useMemo(
-    () => buildRadialBarList(data, dataKey, nameKey, config, baseColors),
+    () => buildRadialBarList(data, String(dataKey), String(nameKey), config, baseColors),
     [data, dataKey, nameKey, config, baseColors],
   );
   const paintsReady = baseColors.length === barNames.length && barNames.length > 0;
@@ -105,34 +225,6 @@ export function DuneRadialChart<T extends Record<string, unknown>>({
     }
     return max > 0 ? max : 1;
   }, [bars]);
-
-  const layoutOptions = useMemo((): Omit<PixelRadialLayoutOptions, 'pixel'> => {
-    const {
-      innerRadius: chartInner,
-      outerRadius: chartOuter,
-      startAngle: chartStart,
-      endAngle: chartEnd,
-      cx: chartCx,
-      cy: chartCy,
-    } = chartProps ?? {};
-    const { barSize, maxBarSize } = radialBarProps ?? {};
-    const thickness =
-      typeof barSize === 'number'
-        ? barSize
-        : typeof maxBarSize === 'number'
-          ? maxBarSize
-          : undefined;
-
-    return {
-      innerRadius: chartInner ?? DEFAULT_INNER_RADIUS,
-      outerRadius: chartOuter ?? DEFAULT_OUTER_RADIUS,
-      startAngle: chartStart,
-      endAngle: chartEnd,
-      cx: chartCx,
-      cy: chartCy,
-      barSize: thickness,
-    };
-  }, [chartProps, radialBarProps]);
 
   if (data.length === 0) {
     const emptyStyle: CSSProperties = {
@@ -204,11 +296,14 @@ export function DuneRadialChart<T extends Record<string, unknown>>({
     accessibilityLayer: chartAccessibilityLayer = true,
     innerRadius = DEFAULT_INNER_RADIUS,
     outerRadius = DEFAULT_OUTER_RADIUS,
+    startAngle: chartStartAngle = 0,
+    endAngle: chartEndAngle = 360,
     ...restChartProps
   } = chartProps ?? {};
   const {
     activeShape: _activeShape,
     background: _background,
+    shape: _shape,
     isAnimationActive,
     animationDuration,
     animationEasing,
@@ -230,14 +325,19 @@ export function DuneRadialChart<T extends Record<string, unknown>>({
         accessibilityLayer={chartAccessibilityLayer}
         innerRadius={innerRadius}
         outerRadius={outerRadius}
+        startAngle={chartStartAngle}
+        endAngle={chartEndAngle}
         {...restChartProps}
       >
         {paintsReady ? (
           <PixelRadialPlotLayer
             bars={bars}
+            hits={hitSectors}
             pixel={pixel}
             fill={fill}
-            layoutOptions={layoutOptions}
+            trackStartAngle={chartStartAngle}
+            trackEndAngle={chartEndAngle}
+            trackColor={trackColor}
           />
         ) : null}
 
@@ -245,10 +345,12 @@ export function DuneRadialChart<T extends Record<string, unknown>>({
           type="number"
           domain={[0, angleMax]}
           tick={false}
+          tickLine={false}
+          axisLine={false}
           {...polarAngleAxisProps}
         />
 
-        <Tooltip content={renderTooltip} {...tooltipProps} />
+        <Tooltip cursor={false} content={renderTooltip} {...tooltipProps} />
         <Legend
           iconType="square"
           iconSize={10}
@@ -276,6 +378,7 @@ export function DuneRadialChart<T extends Record<string, unknown>>({
           animationEasing={animationEasing ?? DUNE_EASE}
           activeShape={false}
           legendType="square"
+          shape={renderHitShape}
         >
           {barNames.map((name, i) => (
             <Cell key={name} fill={barColorForIndex(i)} fillOpacity={0} stroke="none" />
