@@ -44,15 +44,15 @@ import '@suveshmoza/dune-charts/styles.css';
 </DuneChartProvider>
 ```
 
-| Prop                               | Notes                                                         |
-| ---------------------------------- | ------------------------------------------------------------- |
-| `theme` (provider)                 | `dune` \| `night-dune`                                        |
-| `fill`                             | Area/bar/pie/radar/radial/composed: `bands` (default) \| `dither` |
-| `pixel`                            | Cell size in CSS px (default `2`)                             |
-| `config`                           | Per-series / slice `label`, `color`, optional `bands`         |
-| `seriesProps` / `chartProps`       | Recharts pass-throughs (`stackId`, `stackOffset`, …)          |
-| pie / radial `dataKey` / `nameKey` | Recharts-style row data                                       |
-| composed `areas` / `bars` / `lines` | Partition keys on one shared-scale chart                     |
+| Prop                                | Notes                                                             |
+| ----------------------------------- | ----------------------------------------------------------------- |
+| `theme` (provider)                  | `dune` \| `night-dune`                                            |
+| `fill`                              | Area/bar/pie/radar/radial/composed: `bands` (default) \| `dither` |
+| `pixel`                             | Cell size in CSS px (default `2`)                                 |
+| `config`                            | Per-series / slice `label`, `color`, optional `bands`             |
+| `seriesProps` / `chartProps`        | Recharts pass-throughs (`stackId`, `stackOffset`, …)              |
+| pie / radial `dataKey` / `nameKey`  | Recharts-style row data                                           |
+| composed `areas` / `bars` / `lines` | Partition keys on one shared-scale chart                          |
 
 ## Repo
 

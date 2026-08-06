@@ -114,10 +114,7 @@ type TransparentRadialSectorProps = SectorProps & {
  */
 function TransparentRadialSector({ nameKey, onHit, ...props }: TransparentRadialSectorProps) {
   useLayoutEffect(() => {
-    const hit = hitFromSectorProps(
-      props as SectorProps & { payload?: Record<string, unknown>; value?: unknown },
-      nameKey,
-    );
+    const hit = hitFromSectorProps(props, nameKey);
     if (hit != null) onHit(hit);
   });
 
@@ -191,10 +188,7 @@ export function DuneRadialChart<T extends Record<string, unknown>>({
       const index = prev.findIndex((entry) => entry.barName === hit.barName);
       if (index >= 0) {
         const existing = prev[index];
-        if (
-          existing != null &&
-          radialHitsSignature([existing]) === radialHitsSignature([hit])
-        ) {
+        if (existing != null && radialHitsSignature([existing]) === radialHitsSignature([hit])) {
           return prev;
         }
         const next = prev.slice();
@@ -206,14 +200,12 @@ export function DuneRadialChart<T extends Record<string, unknown>>({
   }, []);
 
   const renderHitShape = useCallback(
-    (props: SectorProps) => (
-      <TransparentRadialSector {...props} nameKey={String(nameKey)} onHit={onHit} />
-    ),
+    (props: SectorProps) => <TransparentRadialSector {...props} nameKey={nameKey} onHit={onHit} />,
     [nameKey, onHit],
   );
 
   const bars = useMemo(
-    () => buildRadialBarList(data, String(dataKey), String(nameKey), config, baseColors),
+    () => buildRadialBarList(data, dataKey, nameKey, config, baseColors),
     [data, dataKey, nameKey, config, baseColors],
   );
   const paintsReady = baseColors.length === barNames.length && barNames.length > 0;

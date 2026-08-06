@@ -4,9 +4,7 @@ import { colorsForKeys, composeSeriesKeys } from './composeSeriesKeys';
 
 describe('composeSeriesKeys', () => {
   it('orders areas then bars then lines', () => {
-    expect(
-      composeSeriesKeys(['a'], ['b', 'c'], ['d']),
-    ).toEqual(['a', 'b', 'c', 'd']);
+    expect(composeSeriesKeys(['a'], ['b', 'c'], ['d'])).toEqual(['a', 'b', 'c', 'd']);
   });
 
   it('dedupes with first partition winning', () => {

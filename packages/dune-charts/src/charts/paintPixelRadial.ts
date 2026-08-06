@@ -1,4 +1,8 @@
-import { createDitherTileCanvas, ensureDitherTileCache, type DitherTileCache } from './paintPixelWave';
+import {
+  createDitherTileCanvas,
+  ensureDitherTileCache,
+  type DitherTileCache,
+} from './paintPixelWave';
 import type { PixelRadialBar, PixelRadialPlotLayout } from './pixelRadialEngine';
 import {
   bandIndexFromCrestRow,
@@ -22,13 +26,7 @@ export type PaintPixelRadialOptions = {
 const DEFAULT_TRACK_COLOR = '#eceae4';
 
 /** Light gray crest→depth ramp used when the track color cannot be parsed. */
-const DEFAULT_TRACK_BANDS: PixelWaveBands = [
-  '#ddd9d1',
-  '#e6e2da',
-  '#eceae4',
-  '#f3f1ec',
-  '#f8f6f2',
-];
+const DEFAULT_TRACK_BANDS: PixelWaveBands = ['#ddd9d1', '#e6e2da', '#eceae4', '#f3f1ec', '#f8f6f2'];
 
 type Rgb = { r: number; g: number; b: number };
 
@@ -65,10 +63,14 @@ function parseRgb(color: string): Rgb | null {
   return null;
 }
 
+function channelToHex(n: number): string {
+  return Math.max(0, Math.min(255, Math.round(n)))
+    .toString(16)
+    .padStart(2, '0');
+}
+
 function rgbToHex({ r, g, b }: Rgb): string {
-  const toHex = (n: number) =>
-    Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  return `#${channelToHex(r)}${channelToHex(g)}${channelToHex(b)}`;
 }
 
 function mixRgb(from: Rgb, toward: Rgb, amount: number): Rgb {
@@ -157,9 +159,7 @@ export function paintPixelRadial(
 
     if (fill === 'dither' && ditherTiles != null) {
       const [hi, lo] =
-        cell.kind === 'track'
-          ? softTrackDitherPair(bands, band)
-          : ditherPairFromBands(bands, band);
+        cell.kind === 'track' ? softTrackDitherPair(bands, band) : ditherPairFromBands(bands, band);
       const density = ditherDensityForBand(band);
       const key = `${hi}|${lo}|${density}`;
       let pattern = patternCache.get(key);
