@@ -1,6 +1,6 @@
 {
   "name": "@suveshmoza/dune-charts",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Pixel-wave area, bar, line, and pie charts on a Recharts shell — themes, crest→depth fills, chunky cells",
   "keywords": [
     "area-chart",

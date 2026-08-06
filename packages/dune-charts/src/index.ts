@@ -25,6 +25,8 @@ export type {
   DuneBarChartProps,
   DuneBarSeriesPassThrough,
   DuneCartesianChartProps,
+  DuneComposedChartPassThrough,
+  DuneComposedChartProps,
   DuneLineChartPassThrough,
   DuneLineChartProps,
   DuneLineSeriesPassThrough,
@@ -51,6 +53,8 @@ export { DunePieChart } from './charts/DunePieChart';
 export { DuneRadarChart } from './charts/DuneRadarChart';
 
 export { DuneRadialChart } from './charts/DuneRadialChart';
+
+export { DuneComposedChart } from './charts/DuneComposedChart';
 
 export {
   bandsFromColor,

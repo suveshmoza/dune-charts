@@ -1,6 +1,6 @@
 # dune
 
-Pixel-wave area, bar, line, pie, radar, and radial charts on a Recharts shell. Themes, crest→depth fills, chunky cells.
+Pixel-wave area, bar, line, pie, radar, radial, and composed charts on a Recharts shell. Themes, crest→depth fills, chunky cells.
 
 ## Install
 
@@ -17,6 +17,7 @@ import {
   DunePieChart,
   DuneRadarChart,
   DuneRadialChart,
+  DuneComposedChart,
 } from '@suveshmoza/dune-charts';
 import '@suveshmoza/dune-charts/styles.css';
 ```
@@ -43,14 +44,15 @@ import '@suveshmoza/dune-charts/styles.css';
 </DuneChartProvider>
 ```
 
-| Prop                               | Notes                                                    |
-| ---------------------------------- | -------------------------------------------------------- |
-| `theme` (provider)                 | `dune` \| `night-dune`                                   |
-| `fill`                             | Area/bar/pie/radar/radial: `bands` (default) \| `dither` |
-| `pixel`                            | Cell size in CSS px (default `4`)                        |
-| `config`                           | Per-series / slice `label`, `color`, optional `bands`    |
-| `seriesProps` / `chartProps`       | Recharts pass-throughs (`stackId`, `stackOffset`, …)     |
-| pie / radial `dataKey` / `nameKey` | Recharts-style row data                                  |
+| Prop                               | Notes                                                         |
+| ---------------------------------- | ------------------------------------------------------------- |
+| `theme` (provider)                 | `dune` \| `night-dune`                                        |
+| `fill`                             | Area/bar/pie/radar/radial/composed: `bands` (default) \| `dither` |
+| `pixel`                            | Cell size in CSS px (default `4`)                             |
+| `config`                           | Per-series / slice `label`, `color`, optional `bands`         |
+| `seriesProps` / `chartProps`       | Recharts pass-throughs (`stackId`, `stackOffset`, …)          |
+| pie / radial `dataKey` / `nameKey` | Recharts-style row data                                       |
+| composed `areas` / `bars` / `lines` | Partition keys on one shared-scale chart                     |
 
 ## Repo
 
@@ -63,4 +65,4 @@ pnpm test
 
 Docs site later. Playground: [`apps/playground`](apps/playground).
 
-`DuneAreaChart` / `DuneBarChart` / `DunePieChart` / `DuneRadarChart` / `DuneRadialChart` share `fill` / `pixel` / `config`. `DuneLineChart` is stepped pixel stroke only (no fill wave). Pie and radial use Recharts `dataKey` / `nameKey` rows. Pass `title` / `description` for the chart region; series `config.label` for legend and tooltip text.
+`DuneAreaChart` / `DuneBarChart` / `DunePieChart` / `DuneRadarChart` / `DuneRadialChart` / `DuneComposedChart` share `fill` / `pixel` / `config`. `DuneLineChart` is stepped pixel stroke only (no fill wave). Pie and radial use Recharts `dataKey` / `nameKey` rows. Composed partitions series with `areas` / `bars` / `lines`. Pass `title` / `description` for the chart region; series `config.label` for legend and tooltip text.
