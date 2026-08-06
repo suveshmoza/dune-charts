@@ -1,7 +1,5 @@
 import './styles.css';
 
-export const DUNE_CHARTS_VERSION = '0.0.1';
-
 export {
   DuneChartProvider,
   useDuneTheme,
