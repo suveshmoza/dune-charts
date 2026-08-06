@@ -5,6 +5,10 @@ import type {
   LegendProps,
   LineProps,
   PieProps,
+  PolarAngleAxisProps,
+  PolarGridProps,
+  PolarRadiusAxisProps,
+  RadarProps,
   TooltipProps,
   XAxisProps,
   YAxisProps,
@@ -27,6 +31,7 @@ type RechartsAreaChart = typeof import('recharts').AreaChart;
 type RechartsBarChart = typeof import('recharts').BarChart;
 type RechartsLineChart = typeof import('recharts').LineChart;
 type RechartsPieChart = typeof import('recharts').PieChart;
+type RechartsRadarChart = typeof import('recharts').RadarChart;
 
 /** Pass-through AreaChart props; Dune owns `data` / `children`. */
 export type DuneAreaChartPassThrough = Omit<
@@ -72,6 +77,18 @@ export type DunePieChartPassThrough = Omit<
 
 /** Pass-through Pie props; Dune owns `data` / `dataKey` / `nameKey`. */
 export type DunePiePassThrough = Omit<PieProps<unknown, unknown>, 'data' | 'dataKey' | 'nameKey'>;
+
+/** Pass-through RadarChart props; Dune owns `data` / `children`. */
+export type DuneRadarChartPassThrough = Omit<
+  ComponentPropsWithoutRef<RechartsRadarChart>,
+  'data' | 'children'
+>;
+
+/** Pass-through Radar props; Dune owns `dataKey` / `data` / `name`. */
+export type DuneRadarSeriesPassThrough = Omit<
+  RadarProps<unknown, unknown>,
+  'dataKey' | 'data' | 'name'
+>;
 
 /** Shared cartesian fields without fill-wave (`fill` is area/bar only). */
 type DuneCartesianBaseProps<T> = {
@@ -135,6 +152,32 @@ export type DunePieChartProps<T extends Record<string, unknown>> = {
   valueFormatter?: (value: number, name: string) => string;
   chartProps?: DunePieChartPassThrough;
   pieProps?: DunePiePassThrough;
+  tooltipProps?: Omit<TooltipProps, 'content'>;
+  legendProps?: LegendProps;
+  children?: ReactNode;
+};
+
+export type DuneRadarChartProps<T extends Record<string, unknown>> = {
+  data: readonly T[];
+  categories: readonly DataKey<T>[];
+  /** Angle-axis label field (Recharts `PolarAngleAxis` `dataKey`). */
+  index: DataKey<T>;
+  config?: Partial<Record<DataKey<T>, DuneSeriesConfig>>;
+  /** Pixel fill style. `bands` (default) or Bayer `dither` mesh. */
+  fill?: PixelWaveFill;
+  /** Cell size in CSS pixels (default 4). Clamped to ≥ 1. */
+  pixel?: number;
+  className?: string;
+  height?: DuneChartSize;
+  title?: string;
+  description?: string;
+  emptyMessage?: string;
+  valueFormatter?: (value: number, key: DataKey<T>) => string;
+  chartProps?: DuneRadarChartPassThrough;
+  seriesProps?: Partial<Record<DataKey<T>, DuneRadarSeriesPassThrough>>;
+  polarAngleAxisProps?: Omit<PolarAngleAxisProps, 'dataKey'>;
+  polarRadiusAxisProps?: PolarRadiusAxisProps;
+  polarGridProps?: PolarGridProps;
   tooltipProps?: Omit<TooltipProps, 'content'>;
   legendProps?: LegendProps;
   children?: ReactNode;

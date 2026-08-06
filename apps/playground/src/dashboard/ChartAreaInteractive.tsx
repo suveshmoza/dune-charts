@@ -3,6 +3,7 @@ import {
   DuneBarChart,
   DuneLineChart,
   DunePieChart,
+  DuneRadarChart,
   type PixelWaveFill,
 } from '@suveshmoza/dune-charts';
 import { useMemo, useState, type ReactNode } from 'react';
@@ -320,7 +321,43 @@ export function ChartPieDonut({ fill = 'bands', pixel = 4 }: ChartControls) {
   );
 }
 
-/** Gallery of area + bar + line + pie chart variants for the dashboard. */
+type RadarRow = {
+  axis: string;
+  melange: number;
+  water: number;
+  thrift: number;
+};
+
+const RADAR_DATA: RadarRow[] = [
+  { axis: 'Yield', melange: 86, water: 62, thrift: 54 },
+  { axis: 'Purity', melange: 72, water: 88, thrift: 60 },
+  { axis: 'Reach', melange: 64, water: 58, thrift: 90 },
+  { axis: 'Speed', melange: 78, water: 70, thrift: 66 },
+  { axis: 'Risk', melange: 48, water: 74, thrift: 52 },
+  { axis: 'Stock', melange: 90, water: 55, thrift: 70 },
+];
+
+/** Pixel radar polygons. */
+export function ChartRadarSimple({ fill = 'bands', pixel = 4 }: ChartControls) {
+  return (
+    <ChartCard title="Pixel radar" description="Filled spider polygons — crest→depth from the rim.">
+      <DuneRadarChart<RadarRow>
+        data={RADAR_DATA}
+        index="axis"
+        categories={['melange', 'water', 'thrift']}
+        height={320}
+        title="Pixel radar"
+        description="Ops metrics as pixel-filled radar series."
+        config={throughputConfig}
+        fill={fill}
+        pixel={pixel}
+        valueFormatter={(value) => String(value)}
+      />
+    </ChartCard>
+  );
+}
+
+/** Gallery of area + bar + line + pie + radar chart variants for the dashboard. */
 export function ChartAreaInteractive(props: ChartControls) {
   return (
     <div className="db-chart-gallery">
@@ -333,6 +370,7 @@ export function ChartAreaInteractive(props: ChartControls) {
       <ChartLineSimple {...props} />
       <ChartPieSimple {...props} />
       <ChartPieDonut {...props} />
+      <ChartRadarSimple {...props} />
     </div>
   );
 }

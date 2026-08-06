@@ -1,6 +1,6 @@
 # dune
 
-Pixel-wave area, pixel-block bar, stepped line, and pixel pie charts on a Recharts shell. Themes, crest→depth fills, chunky cells.
+Pixel-wave area, bar, line, pie, and radar charts on a Recharts shell. Themes, crest→depth fills, chunky cells.
 
 ## Install
 
@@ -15,6 +15,7 @@ import {
   DuneBarChart,
   DuneLineChart,
   DunePieChart,
+  DuneRadarChart,
 } from '@suveshmoza/dune-charts';
 import '@suveshmoza/dune-charts/styles.css';
 ```
@@ -44,7 +45,7 @@ import '@suveshmoza/dune-charts/styles.css';
 | Prop                         | Notes                                                 |
 | ---------------------------- | ----------------------------------------------------- |
 | `theme` (provider)           | `dune` \| `night-dune`                                |
-| `fill`                       | Area/bar/pie: `bands` (default) \| `dither`           |
+| `fill`                       | Area/bar/pie/radar: `bands` (default) \| `dither`     |
 | `pixel`                      | Cell size in CSS px (default `4`)                     |
 | `config`                     | Per-series / slice `label`, `color`, optional `bands` |
 | `seriesProps` / `chartProps` | Recharts pass-throughs (`stackId`, `stackOffset`, …)  |
@@ -61,4 +62,4 @@ pnpm test
 
 Docs site later. Playground: [`apps/playground`](apps/playground).
 
-`DuneAreaChart` / `DuneBarChart` / `DunePieChart` share `fill` / `pixel` / `config`. `DuneLineChart` is stepped pixel stroke only (no fill wave). Pie uses Recharts `dataKey` / `nameKey` slice rows. Pass `title` / `description` for the chart region; series `config.label` for legend and tooltip text.
+`DuneAreaChart` / `DuneBarChart` / `DunePieChart` / `DuneRadarChart` share `fill` / `pixel` / `config`. `DuneLineChart` is stepped pixel stroke only (no fill wave). Pie uses Recharts `dataKey` / `nameKey` slice rows. Pass `title` / `description` for the chart region; series `config.label` for legend and tooltip text.
