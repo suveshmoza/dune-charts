@@ -1,6 +1,6 @@
 # dune playground
 
-Live Dashboard demo for [`@suveshmoza/dune-charts`](../../packages/dune-charts).
+Vite + shadcn/ui (Base UI / `base-nova`) sandbox for [`@suveshmoza/dune-charts`](../../packages/dune-charts).
 
 ## Run
 
@@ -16,12 +16,8 @@ Or:
 pnpm --filter playground dev
 ```
 
-## Controls
+Add components with:
 
-Header toggles:
-
-- **Theme** — `dune` | `night-dune`
-- **Fill** — `bands` | `dither`
-- **Pixel** — cell size (`1` | `2` | `4` | `8`)
-
-Charts on the page: stacked / simple / 100% expand areas, pixel bars, stepped lines, pixel pie/donut, and radar. All share the header fill/pixel settings.
+```bash
+pnpm --filter playground exec shadcn@latest add <component>
+```

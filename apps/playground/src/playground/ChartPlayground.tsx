@@ -1,0 +1,534 @@
+import {
+  DuneAreaChart,
+  DuneBarChart,
+  DuneChartProvider,
+  DuneLineChart,
+  DunePieChart,
+  DuneRadarChart,
+  DuneRadialChart,
+  DUNE_THEMES,
+  PIXEL_WAVE_FILLS,
+  type DuneTheme,
+  type PixelWaveFill,
+} from '@suveshmoza/dune-charts';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+
+import {
+  radarData,
+  shareSlices,
+  throughput,
+  throughputConfig,
+  THROUGHPUT_KEYS,
+  type RadarRow,
+  type ShareSlice,
+  type ThroughputRow,
+} from './sample-data';
+
+const CHARTS = [
+  { id: 'area', label: 'Area' },
+  { id: 'bar', label: 'Bar' },
+  { id: 'line', label: 'Line' },
+  { id: 'pie', label: 'Pie' },
+  { id: 'radar', label: 'Radar' },
+  { id: 'radial', label: 'Radial' },
+] as const;
+
+type ChartId = (typeof CHARTS)[number]['id'];
+
+const VARIANTS: Record<ChartId, readonly { id: string; label: string }[]> = {
+  area: [
+    { id: 'simple', label: 'Simple' },
+    { id: 'stacked', label: 'Stacked' },
+    { id: 'expand', label: '100% stacked' },
+  ],
+  bar: [
+    { id: 'simple', label: 'Simple' },
+    { id: 'stacked', label: 'Stacked' },
+    { id: 'horizontal', label: 'Horizontal' },
+  ],
+  line: [
+    { id: 'simple', label: 'Simple' },
+    { id: 'multi', label: 'Multi-series' },
+  ],
+  pie: [
+    { id: 'pie', label: 'Pie' },
+    { id: 'donut', label: 'Donut' },
+  ],
+  radar: [{ id: 'simple', label: 'Simple' }],
+  radial: [
+    { id: 'full', label: 'Full ring' },
+    { id: 'semi', label: 'Semi ring' },
+  ],
+};
+
+const PIXEL_SIZES = [
+  { id: '1', label: '1px' },
+  { id: '2', label: '2px' },
+  { id: '4', label: '4px' },
+  { id: '8', label: '8px' },
+] as const;
+
+const stackProps = {
+  melange: { stackId: 'ops' },
+  water: { stackId: 'ops' },
+  thrift: { stackId: 'ops' },
+  wind: { stackId: 'ops' },
+  silica: { stackId: 'ops' },
+} satisfies Record<(typeof THROUGHPUT_KEYS)[number], { stackId: string }>;
+
+const expandStackProps = {
+  melange: { stackId: 'share' },
+  water: { stackId: 'share' },
+  thrift: { stackId: 'share' },
+} satisfies Record<'melange' | 'water' | 'thrift', { stackId: string }>;
+
+type PlaygroundControls = {
+  fill: PixelWaveFill;
+  pixel: number;
+  loading: boolean;
+  empty: boolean;
+  variant: string;
+};
+
+function ControlRow({
+  label,
+  htmlFor,
+  children,
+}: {
+  label: string;
+  htmlFor?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label htmlFor={htmlFor} className="text-muted-foreground font-normal">
+        {label}
+      </Label>
+      {children}
+    </div>
+  );
+}
+
+function ToggleRow({
+  id,
+  label,
+  checked,
+  onCheckedChange,
+}: {
+  id: string;
+  label: string;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <Label htmlFor={id}>{label}</Label>
+      <Switch id={id} checked={checked} onCheckedChange={onCheckedChange} />
+    </div>
+  );
+}
+
+function ChartCanvas({ chart, controls }: { chart: ChartId; controls: PlaygroundControls }) {
+  const { fill, pixel, loading, empty, variant } = controls;
+  const data = empty ? ([] as ThroughputRow[]) : throughput;
+  const slices = empty ? ([] as ShareSlice[]) : shareSlices;
+  const radar = empty ? ([] as RadarRow[]) : radarData;
+  const height = 360;
+
+  switch (chart) {
+    case 'area':
+      if (variant === 'stacked') {
+        return (
+          <DuneAreaChart<ThroughputRow>
+            data={data}
+            index="month"
+            categories={[...THROUGHPUT_KEYS]}
+            config={throughputConfig}
+            fill={fill}
+            pixel={pixel}
+            loading={loading}
+            height={height}
+            title="Stacked area"
+            description="All series share one stack."
+            seriesProps={stackProps}
+            valueFormatter={(value) => String(value)}
+          />
+        );
+      }
+      if (variant === 'expand') {
+        return (
+          <DuneAreaChart<ThroughputRow>
+            data={data}
+            index="month"
+            categories={['melange', 'water', 'thrift']}
+            config={throughputConfig}
+            fill={fill}
+            pixel={pixel}
+            loading={loading}
+            height={height}
+            title="100% stacked area"
+            description="Each month expands to full height."
+            seriesProps={expandStackProps}
+            chartProps={{ stackOffset: 'expand' }}
+            yAxisProps={{
+              tickFormatter: (value: number) => `${Math.round(value * 100)}%`,
+            }}
+            valueFormatter={(value) => `${Math.round(value * 100)}%`}
+          />
+        );
+      }
+      return (
+        <DuneAreaChart<ThroughputRow>
+          data={data}
+          index="month"
+          categories={['melange']}
+          config={throughputConfig}
+          fill={fill}
+          pixel={pixel}
+          loading={loading}
+          height={height}
+          title="Simple area"
+          description="Single-series melange area."
+          valueFormatter={(value) => String(value)}
+        />
+      );
+
+    case 'bar':
+      if (variant === 'stacked') {
+        return (
+          <DuneBarChart<ThroughputRow>
+            data={data}
+            index="month"
+            categories={[...THROUGHPUT_KEYS]}
+            config={throughputConfig}
+            fill={fill}
+            pixel={pixel}
+            loading={loading}
+            height={height}
+            title="Stacked bars"
+            description="Stacked pixel bars."
+            seriesProps={stackProps}
+            valueFormatter={(value) => String(value)}
+          />
+        );
+      }
+      if (variant === 'horizontal') {
+        return (
+          <DuneBarChart<ThroughputRow>
+            data={data}
+            index="month"
+            categories={['melange']}
+            config={throughputConfig}
+            fill={fill}
+            pixel={pixel}
+            loading={loading}
+            height={height}
+            title="Horizontal bars"
+            description="Categories on Y as pixel rows."
+            chartProps={{ layout: 'vertical' }}
+            valueFormatter={(value) => String(value)}
+          />
+        );
+      }
+      return (
+        <DuneBarChart<ThroughputRow>
+          data={data}
+          index="month"
+          categories={['melange']}
+          config={throughputConfig}
+          fill={fill}
+          pixel={pixel}
+          loading={loading}
+          height={height}
+          title="Simple bars"
+          description="Single-series melange bars."
+          valueFormatter={(value) => String(value)}
+        />
+      );
+
+    case 'line':
+      return (
+        <DuneLineChart<ThroughputRow>
+          data={data}
+          index="month"
+          categories={variant === 'multi' ? ['melange', 'water', 'thrift'] : ['melange']}
+          config={throughputConfig}
+          pixel={pixel}
+          loading={loading}
+          height={height}
+          title={variant === 'multi' ? 'Multi-series line' : 'Simple line'}
+          description="Stepped pixel lines."
+          valueFormatter={(value) => String(value)}
+        />
+      );
+
+    case 'pie':
+      return (
+        <DunePieChart<ShareSlice>
+          data={slices}
+          dataKey="value"
+          nameKey="name"
+          config={throughputConfig}
+          fill={fill}
+          pixel={pixel}
+          loading={loading}
+          height={height}
+          title={variant === 'donut' ? 'Pixel donut' : 'Pixel pie'}
+          description="Share as pixel wedges."
+          pieProps={variant === 'donut' ? { innerRadius: '45%', outerRadius: '80%' } : undefined}
+          valueFormatter={(value) => String(value)}
+        />
+      );
+
+    case 'radar':
+      return (
+        <DuneRadarChart<RadarRow>
+          data={radar}
+          index="axis"
+          categories={['melange', 'water', 'thrift']}
+          config={throughputConfig}
+          fill={fill}
+          pixel={pixel}
+          loading={loading}
+          height={height}
+          title="Pixel radar"
+          description="Ops metrics as pixel radar."
+          valueFormatter={(value) => String(value)}
+        />
+      );
+
+    case 'radial':
+      return (
+        <DuneRadialChart<ShareSlice>
+          data={slices}
+          dataKey="value"
+          nameKey="name"
+          config={throughputConfig}
+          fill={fill}
+          pixel={pixel}
+          loading={loading}
+          height={height}
+          title={variant === 'semi' ? 'Semi radial' : 'Pixel radial'}
+          description="Concentric pixel ring arcs."
+          chartProps={variant === 'semi' ? { startAngle: 180, endAngle: 0, cy: '70%' } : undefined}
+          valueFormatter={(value) => String(value)}
+        />
+      );
+  }
+}
+
+export function ChartPlayground() {
+  const [chart, setChart] = useState<ChartId>('area');
+  const [variant, setVariant] = useState('stacked');
+  const [theme, setTheme] = useState<DuneTheme>('dune');
+  const [fill, setFill] = useState<PixelWaveFill>('dither');
+  const [pixel, setPixel] = useState('2');
+  const [loading, setLoading] = useState(false);
+  const [empty, setEmpty] = useState(false);
+
+  const variants = VARIANTS[chart];
+  const supportsFill = chart !== 'line';
+
+  useEffect(() => {
+    const stillValid = variants.some((item) => item.id === variant);
+    if (!stillValid) {
+      setVariant(variants[0]?.id ?? 'simple');
+    }
+  }, [chart, variant, variants]);
+
+  const chartLabel = useMemo(
+    () => CHARTS.find((item) => item.id === chart)?.label ?? chart,
+    [chart],
+  );
+
+  const variantLabel = useMemo(
+    () => variants.find((item) => item.id === variant)?.label ?? variant,
+    [variant, variants],
+  );
+
+  return (
+    <div className="bg-background text-foreground min-h-dvh">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-8">
+        <header className="flex flex-col gap-1">
+          <p className="text-muted-foreground text-sm font-medium tracking-wide uppercase">
+            @suveshmoza/dune-charts
+          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">Playground</h1>
+          <p className="text-muted-foreground text-sm">
+            Pick a chart and toggle themes, fills, pixel size, and states.
+          </p>
+        </header>
+
+        <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Controls</CardTitle>
+              <CardDescription>Live render options</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <ControlRow label="Chart" htmlFor="chart-select">
+                <Select
+                  value={chart}
+                  onValueChange={(value) => {
+                    if (value != null) setChart(value as ChartId);
+                  }}
+                >
+                  <SelectTrigger id="chart-select" className="w-full">
+                    <SelectValue>{CHARTS.find((item) => item.id === chart)?.label}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CHARTS.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </ControlRow>
+
+              <ControlRow label="Variant" htmlFor="variant-select">
+                <Select
+                  value={variant}
+                  onValueChange={(value) => {
+                    if (value != null) setVariant(value);
+                  }}
+                >
+                  <SelectTrigger id="variant-select" className="w-full">
+                    <SelectValue>{variants.find((item) => item.id === variant)?.label}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {variants.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </ControlRow>
+
+              <Separator />
+
+              <ControlRow label="Theme" htmlFor="theme-select">
+                <Select
+                  value={theme}
+                  onValueChange={(value) => {
+                    if (value != null) setTheme(value as DuneTheme);
+                  }}
+                >
+                  <SelectTrigger id="theme-select" className="w-full">
+                    <SelectValue>{theme}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DUNE_THEMES.map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {item}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </ControlRow>
+
+              <ControlRow label="Fill" htmlFor="fill-select">
+                <Select
+                  value={fill}
+                  disabled={!supportsFill}
+                  onValueChange={(value) => {
+                    if (value != null) setFill(value as PixelWaveFill);
+                  }}
+                >
+                  <SelectTrigger id="fill-select" className="w-full">
+                    <SelectValue>{fill}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PIXEL_WAVE_FILLS.map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {item}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </ControlRow>
+
+              <ControlRow label="Pixel size" htmlFor="pixel-select">
+                <Select
+                  value={pixel}
+                  onValueChange={(value) => {
+                    if (value != null) setPixel(value);
+                  }}
+                >
+                  <SelectTrigger id="pixel-select" className="w-full">
+                    <SelectValue>
+                      {PIXEL_SIZES.find((item) => item.id === pixel)?.label}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PIXEL_SIZES.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </ControlRow>
+
+              <Separator />
+
+              <ToggleRow
+                id="loading-toggle"
+                label="Loading"
+                checked={loading}
+                onCheckedChange={setLoading}
+              />
+              <ToggleRow
+                id="empty-toggle"
+                label="Empty data"
+                checked={empty}
+                onCheckedChange={setEmpty}
+              />
+            </CardContent>
+          </Card>
+
+          <Card className="min-w-0">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">
+                {chartLabel} · {variantLabel}
+              </CardTitle>
+              <CardDescription>
+                theme={theme}
+                {supportsFill ? ` · fill=${fill}` : ''} · pixel={pixel}
+                {loading ? ' · loading' : ''}
+                {empty ? ' · empty' : ''}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DuneChartProvider theme={theme}>
+                <ChartCanvas
+                  chart={chart}
+                  controls={{
+                    fill,
+                    pixel: Number(pixel),
+                    loading,
+                    empty,
+                    variant,
+                  }}
+                />
+              </DuneChartProvider>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}

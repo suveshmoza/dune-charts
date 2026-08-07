@@ -43,16 +43,16 @@ import '@suveshmoza/dune-charts/styles.css';
 </DuneChartProvider>
 ```
 
-| Prop                                | Notes                                                             |
-| ----------------------------------- | ----------------------------------------------------------------- |
-| `theme` (provider)                  | `dune` \| `night-dune`                                            |
-| `fill`                              | Area/bar/pie/radar/radial: `bands` (default) \| `dither`          |
-| `pixel`                             | Cell size in CSS px (default `2`)                                 |
-| `loading`                           | All charts: pixel skeleton + soft shimmer + spinner badge         |
-| `loadingMessage` / `loadingIndicator` | Optional copy / custom badge mark                               |
-| `config`                            | Per-series / slice `label`, `color`, optional `bands`             |
-| `seriesProps` / `chartProps`        | Recharts pass-throughs (`stackId`, `stackOffset`, …)              |
-| pie / radial `dataKey` / `nameKey`  | Recharts-style row data                                           |
+| Prop                                  | Notes                                                     |
+| ------------------------------------- | --------------------------------------------------------- |
+| `theme` (provider)                    | `dune` \| `night-dune`                                    |
+| `fill`                                | Area/bar/pie/radar/radial: `bands` (default) \| `dither`  |
+| `pixel`                               | Cell size in CSS px (default `2`)                         |
+| `loading`                             | All charts: pixel skeleton + soft shimmer + spinner badge |
+| `loadingMessage` / `loadingIndicator` | Optional copy / custom badge mark                         |
+| `config`                              | Per-series / slice `label`, `color`, optional `bands`     |
+| `seriesProps` / `chartProps`          | Recharts pass-throughs (`stackId`, `stackOffset`, …)      |
+| pie / radial `dataKey` / `nameKey`    | Recharts-style row data                                   |
 
 ## Repo
 
