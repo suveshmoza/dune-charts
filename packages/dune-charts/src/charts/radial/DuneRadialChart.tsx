@@ -258,6 +258,11 @@ function DuneRadialChartRoot<T extends Record<string, unknown>>({
   );
 
   const seriesStyle = buildSeriesStyle(barNames, config);
+  /** Recharts RadialBar legend reads `entry.fill` from chart data (not Cell). */
+  const chartData = useMemo(
+    () => data.map((row, i) => ({ ...row, fill: getSeriesVar(i) })),
+    [data],
+  );
   const [baseColors, setBaseColors] = useState<string[]>([]);
   const [trackColor, setTrackColor] = useState('#eceae4');
   const [hitSectors, setHitSectors] = useState<PixelRadialHitSector[]>([]);
@@ -448,7 +453,7 @@ function DuneRadialChartRoot<T extends Record<string, unknown>>({
         initialDimension={{ width: 640, height: typeof height === 'number' ? height : 320 }}
       >
         <RadialBarChart
-          data={[...data]}
+          data={chartData}
           accessibilityLayer={chartAccessibilityLayer}
           innerRadius={innerRadius}
           outerRadius={outerRadius}
