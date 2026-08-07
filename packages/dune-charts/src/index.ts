@@ -48,17 +48,17 @@ export type {
   DuneSeriesConfig,
 } from './types';
 
-export { DuneAreaChart, type DuneAreaChartProps } from './charts/DuneAreaChart';
+export { DuneAreaChart, type DuneAreaChartProps } from './charts/area/DuneAreaChart';
 
-export { DuneBarChart } from './charts/DuneBarChart';
+export { DuneBarChart } from './charts/bar/DuneBarChart';
 
-export { DuneLineChart } from './charts/DuneLineChart';
+export { DuneLineChart } from './charts/line/DuneLineChart';
 
-export { DunePieChart } from './charts/DunePieChart';
+export { DunePieChart } from './charts/pie/DunePieChart';
 
-export { DuneRadarChart } from './charts/DuneRadarChart';
+export { DuneRadarChart } from './charts/radar/DuneRadarChart';
 
-export { DuneRadialChart } from './charts/DuneRadialChart';
+export { DuneRadialChart } from './charts/radial/DuneRadialChart';
 
 export {
   bandsFromColor,
@@ -70,7 +70,7 @@ export {
   type PixelWaveBands,
   type PixelWaveFill,
   type PixelWaveSeries,
-} from './charts/pixelWaveEngine';
+} from './charts/shared/pixelWaveEngine';
 
 export {
   buildSeriesStyle,

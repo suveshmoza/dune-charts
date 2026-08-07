@@ -63,6 +63,8 @@ pnpm dev                 # playground
 pnpm test
 ```
 
+Chart sources live under [`packages/dune-charts/src/charts/<family>/`](packages/dune-charts/src/charts) (`area`, `bar`, `line`, `pie`, `radar`, `radial`) plus `shared/` for wave/bands core, dither tiles, polar math, loading helpers, and series builders.
+
 Docs site later. Playground: [`apps/playground`](apps/playground).
 
 `DuneAreaChart` / `DuneBarChart` / `DunePieChart` / `DuneRadarChart` / `DuneRadialChart` share `fill` / `pixel` / `config`. `DuneLineChart` is stepped pixel stroke only (no fill wave). Pie and radial use Recharts `dataKey` / `nameKey` rows. Horizontal bars: `chartProps={{ layout: 'vertical' }}` on `DuneBarChart`. Loading: `loading` / `loadingMessage` / `loadingIndicator` on every chart — pixel skeletons with a shared soft traveling shimmer plus floating spinner badge (line is a muted stepped path; fill charts use dither). Pass `title` / `description` for the chart region; series `config.label` for legend and tooltip text.

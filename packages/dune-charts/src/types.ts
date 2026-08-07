@@ -15,7 +15,7 @@ import type {
   YAxisProps,
 } from 'recharts';
 
-import type { PixelWaveBands, PixelWaveFill } from './charts/pixelWaveEngine';
+import type { PixelWaveBands, PixelWaveFill } from './charts/shared/pixelWaveEngine';
 import type { DuneChartSize } from './primitives/DuneChartContainer';
 
 export type DataKey<T> = Extract<keyof T, string>;
