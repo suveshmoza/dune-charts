@@ -161,7 +161,7 @@ const RadialBar = markDunePart(
     fill: _pixelFill,
     activeShape: _activeShape,
     background: _background,
-    shape: _shape,
+    shape,
     isAnimationActive,
     animationDuration,
     animationEasing,
@@ -181,6 +181,7 @@ const RadialBar = markDunePart(
         animationEasing={animationEasing ?? DUNE_EASE}
         activeShape={false}
         legendType="square"
+        shape={shape}
       >
         {barNames.map((name, i) => (
           <Cell key={name} fill={getSeriesVar(i)} fillOpacity={0} stroke="none" />
