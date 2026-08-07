@@ -333,6 +333,7 @@ function DuneLineChartRoot<T extends Record<string, unknown>>({
               pointCount={data.length}
               indexValues={indexValues}
               pixel={pixel}
+              animate={!prefersReducedMotion}
             />
           ) : null}
 

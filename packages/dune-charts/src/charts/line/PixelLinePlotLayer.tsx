@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { usePlotArea, useXAxisScale, useYAxisScale } from 'recharts';
 
+import { DUNE_DURATION } from '../shared/chartShell';
 import {
   fillShimmerMask,
   SHIMMER_MS,
@@ -19,9 +20,53 @@ export type PixelLinePlotLayerProps = {
   /**
    * Traveling opacity mask over baked stepped lines (loading skeleton).
    * Same soft beam as area/bar/pie loading.
+   * When true, entrance wipe is skipped.
    */
   shimmer?: boolean;
+  /**
+   * One-shot left→right wipe reveal of the baked pixels.
+   * Ignored while `shimmer` is active. Default `true`.
+   */
+  animate?: boolean;
 };
+
+function easeOutCubic(t: number): number {
+  const u = 1 - t;
+  return 1 - u * u * u;
+}
+
+function blitFull(
+  ctx: CanvasRenderingContext2D,
+  bake: HTMLCanvasElement,
+  dpr: number,
+  cssW: number,
+  cssH: number,
+): void {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.clearRect(0, 0, cssW, cssH);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(bake, 0, 0);
+}
+
+function blitWipe(
+  ctx: CanvasRenderingContext2D,
+  bake: HTMLCanvasElement,
+  dpr: number,
+  cssW: number,
+  cssH: number,
+  revealW: number,
+): void {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.clearRect(0, 0, cssW, cssH);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(bake, 0, 0);
+  ctx.globalCompositeOperation = 'destination-in';
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, Math.max(0, revealW), cssH);
+  ctx.globalCompositeOperation = 'source-over';
+}
 
 /**
  * Draws stepped pixel lines inside the Recharts plot area via Canvas2D.
@@ -33,6 +78,7 @@ export function PixelLinePlotLayer({
   indexValues,
   pixel = 2,
   shimmer = false,
+  animate = true,
 }: PixelLinePlotLayerProps) {
   const plot = usePlotArea();
   const yScale = useYAxisScale();
@@ -84,15 +130,38 @@ export function PixelLinePlotLayer({
     bakeCtx.setTransform(1, 0, 0, 1, 0, 0);
     paintPixelLines(bakeCtx, { layout, series });
 
-    if (!shimmer) {
-      const ctx = canvas.getContext('2d');
-      if (ctx == null) return;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, cssW, cssH);
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(bake, 0, 0);
+    if (shimmer) return;
+
+    const ctx = canvas.getContext('2d');
+    if (ctx == null) return;
+
+    if (!animate) {
+      blitFull(ctx, bake, dpr, cssW, cssH);
+      return;
     }
-  }, [layout, series, shimmer]);
+
+    let raf = 0;
+    const start = performance.now();
+
+    const tick = (now: number) => {
+      const liveBake = bakeRef.current;
+      if (liveBake == null) return;
+
+      const t = Math.min(1, (now - start) / DUNE_DURATION);
+      blitWipe(ctx, liveBake, dpr, cssW, cssH, cssW * easeOutCubic(t));
+
+      if (t < 1) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        blitFull(ctx, liveBake, dpr, cssW, cssH);
+      }
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+    };
+  }, [layout, series, shimmer, animate]);
 
   const plotSizeKey = layout == null ? '' : `${layout.plotW}x${layout.plotH}`;
   useLayoutEffect(() => {
