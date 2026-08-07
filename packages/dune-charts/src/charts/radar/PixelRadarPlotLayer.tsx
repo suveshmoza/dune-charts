@@ -1,15 +1,15 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { usePlotArea } from 'recharts';
 
-import { paintPixelRadar, type DitherTileCache } from './paintPixelRadar';
-import { computePixelRadarLayout } from './pixelRadarEngine';
-import type { PixelWaveFill, PixelWaveSeries } from '../shared/pixelWaveEngine';
 import {
   fillShimmerMask,
   SHIMMER_MS,
   SHIMMER_TRAVEL_END,
   SHIMMER_TRAVEL_START,
 } from '../shared/loadingShimmerMask';
+import type { PixelWaveFill, PixelWaveSeries } from '../shared/pixelWaveEngine';
+import { paintPixelRadar, type DitherTileCache } from './paintPixelRadar';
+import { computePixelRadarLayout } from './pixelRadarEngine';
 
 export type PixelRadarPlotLayerProps = {
   series: readonly PixelWaveSeries[];

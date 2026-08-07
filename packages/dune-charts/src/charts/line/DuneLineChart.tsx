@@ -12,10 +12,7 @@ import {
 } from 'recharts';
 
 import { DuneChartContainer } from '../../primitives/DuneChartContainer';
-import {
-  DEFAULT_LOADING_MESSAGE,
-  DuneChartLoadingBadge,
-} from '../../primitives/DuneChartLoading';
+import { DEFAULT_LOADING_MESSAGE, DuneChartLoadingBadge } from '../../primitives/DuneChartLoading';
 import { useDuneTheme } from '../../provider/DuneChartProvider';
 import type { DuneLineChartProps } from '../../types';
 import { usePrefersReducedMotion } from '../../utils/reducedMotion';
@@ -116,10 +113,7 @@ export function DuneLineChart<T extends Record<string, unknown>>({
     return DEFAULT_LOADING_AREA_COUNT;
   }, [data.length]);
 
-  const loadingRows = useMemo(
-    () => buildLoadingAreaRows(loadingPointCount),
-    [loadingPointCount],
-  );
+  const loadingRows = useMemo(() => buildLoadingAreaRows(loadingPointCount), [loadingPointCount]);
   const loadingSeries = useMemo(
     () => buildLoadingAreaSeriesFromRows(loadingRows, trackColor),
     [loadingRows, trackColor],

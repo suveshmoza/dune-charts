@@ -1,5 +1,4 @@
 import { ensureDitherTileCache, type DitherTileCache } from '../shared/ditherTiles';
-import type { PixelBarPlotLayout, PixelBarSegment } from './pixelBarEngine';
 import {
   bandIndexFromCrestRow,
   bandIndexFromCrestRowDither,
@@ -9,6 +8,7 @@ import {
   type PixelWaveFill,
   type PixelWaveSeries,
 } from '../shared/pixelWaveEngine';
+import type { PixelBarPlotLayout, PixelBarSegment } from './pixelBarEngine';
 
 export type PaintPixelBarsOptions = {
   layout: PixelBarPlotLayout;

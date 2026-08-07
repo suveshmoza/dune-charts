@@ -1,11 +1,4 @@
-import {
-  useId,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-} from 'react';
+import { useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
   Bar,
   BarChart,
@@ -19,10 +12,7 @@ import {
 } from 'recharts';
 
 import { DuneChartContainer } from '../../primitives/DuneChartContainer';
-import {
-  DEFAULT_LOADING_MESSAGE,
-  DuneChartLoadingBadge,
-} from '../../primitives/DuneChartLoading';
+import { DEFAULT_LOADING_MESSAGE, DuneChartLoadingBadge } from '../../primitives/DuneChartLoading';
 import { useDuneTheme } from '../../provider/DuneChartProvider';
 import type { DuneBarChartProps } from '../../types';
 import { usePrefersReducedMotion } from '../../utils/reducedMotion';

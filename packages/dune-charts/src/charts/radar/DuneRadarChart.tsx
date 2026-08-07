@@ -12,10 +12,7 @@ import {
 } from 'recharts';
 
 import { DuneChartContainer } from '../../primitives/DuneChartContainer';
-import {
-  DEFAULT_LOADING_MESSAGE,
-  DuneChartLoadingBadge,
-} from '../../primitives/DuneChartLoading';
+import { DEFAULT_LOADING_MESSAGE, DuneChartLoadingBadge } from '../../primitives/DuneChartLoading';
 import { useDuneTheme } from '../../provider/DuneChartProvider';
 import type { DuneRadarChartProps } from '../../types';
 import { usePrefersReducedMotion } from '../../utils/reducedMotion';
@@ -117,10 +114,7 @@ export function DuneRadarChart<T extends Record<string, unknown>>({
     return DEFAULT_LOADING_RADAR_COUNT;
   }, [data.length]);
 
-  const loadingRows = useMemo(
-    () => buildLoadingRadarRows(loadingPointCount),
-    [loadingPointCount],
-  );
+  const loadingRows = useMemo(() => buildLoadingRadarRows(loadingPointCount), [loadingPointCount]);
   const loadingSeries = useMemo(
     () => buildLoadingRadarSeriesFromRows(loadingRows, trackColor),
     [loadingRows, trackColor],

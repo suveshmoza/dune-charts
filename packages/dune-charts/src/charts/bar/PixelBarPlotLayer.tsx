@@ -1,15 +1,15 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { usePlotArea, useXAxisScale, useYAxisScale } from 'recharts';
 
-import { paintPixelBars, type DitherTileCache } from './paintPixelBars';
-import { computePixelBarPlotLayout, type PixelBarChartLayout } from './pixelBarEngine';
-import type { PixelWaveFill, PixelWaveSeries } from '../shared/pixelWaveEngine';
 import {
   fillShimmerMask,
   SHIMMER_MS,
   SHIMMER_TRAVEL_END,
   SHIMMER_TRAVEL_START,
 } from '../shared/loadingShimmerMask';
+import type { PixelWaveFill, PixelWaveSeries } from '../shared/pixelWaveEngine';
+import { paintPixelBars, type DitherTileCache } from './paintPixelBars';
+import { computePixelBarPlotLayout, type PixelBarChartLayout } from './pixelBarEngine';
 
 export type PixelBarPlotLayerProps = {
   series: readonly PixelWaveSeries[];
@@ -51,24 +51,18 @@ export function PixelBarPlotLayer({
 
     if (layout === 'horizontal') {
       if (yScale == null) return null;
-      return computePixelBarPlotLayout(
-        series,
-        plot,
-        (value) => Number(yScale(value)),
-        pointCount,
-        {
-          pixel,
-          indexValues,
-          layout,
-          categoryScale:
-            xScale == null
-              ? undefined
-              : (value, options) => {
-                  const result = xScale(value, options);
-                  return result == null ? undefined : result;
-                },
-        },
-      );
+      return computePixelBarPlotLayout(series, plot, (value) => Number(yScale(value)), pointCount, {
+        pixel,
+        indexValues,
+        layout,
+        categoryScale:
+          xScale == null
+            ? undefined
+            : (value, options) => {
+                const result = xScale(value, options);
+                return result == null ? undefined : result;
+              },
+      });
     }
 
     if (xScale == null) return null;

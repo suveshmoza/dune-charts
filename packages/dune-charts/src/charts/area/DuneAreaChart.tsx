@@ -1,11 +1,4 @@
-import {
-  useId,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-} from 'react';
+import { useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
   Area,
   AreaChart,
@@ -19,14 +12,16 @@ import {
 } from 'recharts';
 
 import { DuneChartContainer } from '../../primitives/DuneChartContainer';
-import {
-  DEFAULT_LOADING_MESSAGE,
-  DuneChartLoadingBadge,
-} from '../../primitives/DuneChartLoading';
+import { DEFAULT_LOADING_MESSAGE, DuneChartLoadingBadge } from '../../primitives/DuneChartLoading';
 import { useDuneTheme } from '../../provider/DuneChartProvider';
 import type { DuneCartesianChartProps } from '../../types';
 import { usePrefersReducedMotion } from '../../utils/reducedMotion';
-import { buildSeriesStyle, getSeriesVar, resolveCssColor, resolveSeriesBaseColors } from '../../utils/series';
+import {
+  buildSeriesStyle,
+  getSeriesVar,
+  resolveCssColor,
+  resolveSeriesBaseColors,
+} from '../../utils/series';
 import { buildSeriesList } from '../shared/buildSeriesList';
 import {
   buildLoadingAreaRows,
@@ -115,10 +110,7 @@ export function DuneAreaChart<T extends Record<string, unknown>>({
   }, [data.length]);
 
   // Stable skeleton — heights do not re-roll while loading.
-  const loadingRows = useMemo(
-    () => buildLoadingAreaRows(loadingPointCount),
-    [loadingPointCount],
-  );
+  const loadingRows = useMemo(() => buildLoadingAreaRows(loadingPointCount), [loadingPointCount]);
   const loadingSeries = useMemo(
     () => buildLoadingAreaSeriesFromRows(loadingRows, trackColor),
     [loadingRows, trackColor],

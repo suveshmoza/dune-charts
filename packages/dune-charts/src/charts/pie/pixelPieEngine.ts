@@ -1,11 +1,6 @@
 import type { DuneSeriesConfig } from '../../types';
 import { bandsFromColor, type PixelWaveBands, type PlotRect } from '../shared/pixelWaveEngine';
-import {
-  angleInSector,
-  cellAngleDeg,
-  resolveCenter,
-  resolveRadius,
-} from '../shared/polarMath';
+import { angleInSector, cellAngleDeg, resolveCenter, resolveRadius } from '../shared/polarMath';
 
 export {
   angleInSector,

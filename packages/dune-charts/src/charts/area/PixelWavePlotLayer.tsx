@@ -1,18 +1,18 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { usePlotArea, useXAxisScale, useYAxisScale } from 'recharts';
 
-import { paintPixelWave, type DitherTileCache } from './paintPixelWave';
-import {
-  computePixelWavePlotLayout,
-  type PixelWaveFill,
-  type PixelWaveSeries,
-} from '../shared/pixelWaveEngine';
 import {
   fillShimmerMask,
   SHIMMER_MS,
   SHIMMER_TRAVEL_END,
   SHIMMER_TRAVEL_START,
 } from '../shared/loadingShimmerMask';
+import {
+  computePixelWavePlotLayout,
+  type PixelWaveFill,
+  type PixelWaveSeries,
+} from '../shared/pixelWaveEngine';
+import { paintPixelWave, type DitherTileCache } from './paintPixelWave';
 
 export type PixelWavePlotLayerProps = {
   series: readonly PixelWaveSeries[];

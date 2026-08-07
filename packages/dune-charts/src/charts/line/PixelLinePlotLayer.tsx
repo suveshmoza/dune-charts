@@ -1,15 +1,15 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { usePlotArea, useXAxisScale, useYAxisScale } from 'recharts';
 
-import { paintPixelLines } from './paintPixelLines';
-import { computePixelLinePlotLayout } from './pixelLineEngine';
-import type { PixelWaveSeries } from '../shared/pixelWaveEngine';
 import {
   fillShimmerMask,
   SHIMMER_MS,
   SHIMMER_TRAVEL_END,
   SHIMMER_TRAVEL_START,
 } from '../shared/loadingShimmerMask';
+import type { PixelWaveSeries } from '../shared/pixelWaveEngine';
+import { paintPixelLines } from './paintPixelLines';
+import { computePixelLinePlotLayout } from './pixelLineEngine';
 
 export type PixelLinePlotLayerProps = {
   series: readonly PixelWaveSeries[];

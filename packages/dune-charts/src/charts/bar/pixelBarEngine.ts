@@ -240,12 +240,11 @@ export function computePixelBarPlotLayout(
   const plotH = Math.max(pixel, snapDown(plot.height, pixel));
 
   const baselineRaw = valueScale(0);
-  const baseline =
-    Number.isFinite(baselineRaw)
-      ? baselineRaw
-      : layout === 'horizontal'
-        ? plot.y + plot.height
-        : plot.x;
+  const baseline = Number.isFinite(baselineRaw)
+    ? baselineRaw
+    : layout === 'horizontal'
+      ? plot.y + plot.height
+      : plot.x;
 
   const maxCells =
     layout === 'horizontal'
@@ -265,7 +264,8 @@ export function computePixelBarPlotLayout(
     let center: number;
     let band: number;
     if (categoryCenters != null) {
-      center = categoryCenters[i] ?? (layout === 'horizontal' ? plot.x + plotW / 2 : plot.y + plotH / 2);
+      center =
+        categoryCenters[i] ?? (layout === 'horizontal' ? plot.x + plotW / 2 : plot.y + plotH / 2);
       band = bandWidthAt(categoryCenters, i, categorySpan);
     } else if (layout === 'horizontal') {
       const slot = plotW / pointCount;

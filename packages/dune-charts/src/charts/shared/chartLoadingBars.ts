@@ -1,5 +1,5 @@
-import { bandsFromColor, type PixelWaveBands, type PixelWaveSeries } from './pixelWaveEngine';
 import type { PixelPieSlice } from '../pie/pixelPieEngine';
+import { bandsFromColor, type PixelWaveBands, type PixelWaveSeries } from './pixelWaveEngine';
 
 export const LOADING_BAR_INDEX_KEY = '__dune_loading_i';
 export const LOADING_BAR_VALUE_KEY = '__dune_loading';
@@ -48,7 +48,9 @@ function parseRgb(color: string): Rgb | null {
 }
 
 function channelToHex(n: number): string {
-  return Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
+  return Math.max(0, Math.min(255, Math.round(n)))
+    .toString(16)
+    .padStart(2, '0');
 }
 
 function rgbToHex({ r, g, b }: Rgb): string {
@@ -96,12 +98,7 @@ function hashUnit(n: number): number {
  * Stable for a given `count`/`epoch` — charts should pass a fixed epoch so
  * bars do not jump while loading.
  */
-export function getLoadingBarHeights(
-  count: number,
-  epoch = 0,
-  min = 22,
-  max = 88,
-): number[] {
+export function getLoadingBarHeights(count: number, epoch = 0, min = 22, max = 88): number[] {
   const n = Math.max(1, Math.floor(count));
   const span = Math.max(1, max - min);
   const heights: number[] = [];
@@ -118,10 +115,7 @@ export function getLoadingBarHeights(
   return heights;
 }
 
-export function buildLoadingBarRows(
-  count: number,
-  epoch = 0,
-): Record<string, string | number>[] {
+export function buildLoadingBarRows(count: number, epoch = 0): Record<string, string | number>[] {
   return getLoadingBarHeights(count, epoch).map((value, i) => ({
     [LOADING_BAR_INDEX_KEY]: String(i),
     [LOADING_BAR_VALUE_KEY]: value,
@@ -129,10 +123,7 @@ export function buildLoadingBarRows(
 }
 
 /** Synthetic area/line points for loading skeletons. */
-export function buildLoadingAreaRows(
-  count: number,
-  epoch = 0,
-): Record<string, string | number>[] {
+export function buildLoadingAreaRows(count: number, epoch = 0): Record<string, string | number>[] {
   return getLoadingBarHeights(count, epoch).map((value, i) => ({
     [LOADING_AREA_INDEX_KEY]: String(i),
     [LOADING_AREA_VALUE_KEY]: value,
@@ -174,9 +165,7 @@ export const LOADING_PIE_VALUE_KEY = '__dune_loading';
 export const LOADING_PIE_NAME_KEY = '__dune_loading_name';
 
 /** Equal-weight pie rows for Recharts Pie hit/layout during loading. */
-export function buildLoadingPieRows(
-  count: number,
-): Record<string, string | number>[] {
+export function buildLoadingPieRows(count: number): Record<string, string | number>[] {
   const n = Math.max(1, Math.floor(count));
   return Array.from({ length: n }, (_, i) => ({
     [LOADING_PIE_NAME_KEY]: `loading-${i}`,
@@ -185,10 +174,7 @@ export function buildLoadingPieRows(
 }
 
 /** Equal-weight muted dither slices for pie loading skeletons. */
-export function buildLoadingPieSlices(
-  count: number,
-  trackColor: string,
-): PixelPieSlice[] {
+export function buildLoadingPieSlices(count: number, trackColor: string): PixelPieSlice[] {
   const n = Math.max(1, Math.floor(count));
   const bands = loadingBandsFromColor(trackColor);
   return Array.from({ length: n }, (_, i) => ({
@@ -203,10 +189,7 @@ export const LOADING_RADAR_INDEX_KEY = '__dune_loading_i';
 export const LOADING_RADAR_VALUE_KEY = '__dune_loading';
 
 /** Stable radar polygon vertices for loading skeletons. */
-export function buildLoadingRadarRows(
-  count: number,
-  epoch = 0,
-): Record<string, string | number>[] {
+export function buildLoadingRadarRows(count: number, epoch = 0): Record<string, string | number>[] {
   return getLoadingBarHeights(count, epoch, 28, 92).map((value, i) => ({
     [LOADING_RADAR_INDEX_KEY]: String(i),
     [LOADING_RADAR_VALUE_KEY]: value,

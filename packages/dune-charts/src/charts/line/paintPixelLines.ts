@@ -1,5 +1,5 @@
-import type { PixelLinePlotLayout } from './pixelLineEngine';
 import type { PixelWaveSeries } from '../shared/pixelWaveEngine';
+import type { PixelLinePlotLayout } from './pixelLineEngine';
 
 export type PaintPixelLinesOptions = {
   layout: PixelLinePlotLayout;

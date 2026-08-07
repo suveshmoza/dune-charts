@@ -1,19 +1,19 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { usePlotArea } from 'recharts';
 
-import { paintPixelPie, type DitherTileCache } from './paintPixelPie';
-import {
-  computePixelPieLayout,
-  type PixelPieLayoutOptions,
-  type PixelPieSlice,
-} from './pixelPieEngine';
-import type { PixelWaveFill } from '../shared/pixelWaveEngine';
 import {
   fillShimmerMask,
   SHIMMER_MS,
   SHIMMER_TRAVEL_END,
   SHIMMER_TRAVEL_START,
 } from '../shared/loadingShimmerMask';
+import type { PixelWaveFill } from '../shared/pixelWaveEngine';
+import { paintPixelPie, type DitherTileCache } from './paintPixelPie';
+import {
+  computePixelPieLayout,
+  type PixelPieLayoutOptions,
+  type PixelPieSlice,
+} from './pixelPieEngine';
 
 export type PixelPiePlotLayerProps = {
   slices: readonly PixelPieSlice[];

@@ -1,6 +1,13 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { usePlotArea } from 'recharts';
 
+import {
+  fillShimmerMask,
+  SHIMMER_MS,
+  SHIMMER_TRAVEL_END,
+  SHIMMER_TRAVEL_START,
+} from '../shared/loadingShimmerMask';
+import type { PixelWaveFill } from '../shared/pixelWaveEngine';
 import { paintPixelRadial, type DitherTileCache } from './paintPixelRadial';
 import {
   computePixelRadialLayout,
@@ -9,13 +16,6 @@ import {
   type PixelRadialHitSector,
   type PixelRadialLayoutOptions,
 } from './pixelRadialEngine';
-import type { PixelWaveFill } from '../shared/pixelWaveEngine';
-import {
-  fillShimmerMask,
-  SHIMMER_MS,
-  SHIMMER_TRAVEL_END,
-  SHIMMER_TRAVEL_START,
-} from '../shared/loadingShimmerMask';
 
 export type PixelRadialPlotLayerProps = {
   bars: readonly PixelRadialBar[];

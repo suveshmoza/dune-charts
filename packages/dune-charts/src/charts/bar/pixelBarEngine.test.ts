@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { computePixelBarPlotLayout, snapBarWidth } from './pixelBarEngine';
 import type { PixelWaveBands, PixelWaveSeries } from '../shared/pixelWaveEngine';
+import { computePixelBarPlotLayout, snapBarWidth } from './pixelBarEngine';
 
 const BANDS: PixelWaveBands = ['#111', '#333', '#555', '#777', '#999'];
 

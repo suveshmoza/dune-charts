@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import type { PixelWaveBands, PixelWaveSeries } from '../shared/pixelWaveEngine';
 import {
   computePixelRadarLayout,
   pointInPolygon,
@@ -8,7 +9,6 @@ import {
   rimRadiusAtAngle,
   type PixelRadarVertex,
 } from './pixelRadarEngine';
-import type { PixelWaveBands, PixelWaveSeries } from '../shared/pixelWaveEngine';
 
 const BANDS: PixelWaveBands = ['#111', '#333', '#555', '#777', '#999'];
 

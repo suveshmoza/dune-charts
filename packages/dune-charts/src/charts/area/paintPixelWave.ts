@@ -1,3 +1,4 @@
+import { ditherTileKey, ensureDitherTileCache, type DitherTileCache } from '../shared/ditherTiles';
 import {
   bandIndexFromCrestRow,
   bandIndexFromCrestRowDither,
@@ -8,11 +9,6 @@ import {
   type PixelWavePlotLayout,
   type PixelWaveSeries,
 } from '../shared/pixelWaveEngine';
-import {
-  ditherTileKey,
-  ensureDitherTileCache,
-  type DitherTileCache,
-} from '../shared/ditherTiles';
 
 export type PaintPixelWaveOptions = {
   layout: PixelWavePlotLayout;

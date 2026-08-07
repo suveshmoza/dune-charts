@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import type { PixelWaveBands, PixelWaveSeries } from '../shared/pixelWaveEngine';
 import {
   appendHorizontalRun,
   appendVerticalRun,
@@ -7,7 +8,6 @@ import {
   rasterizeStepAfter,
   type PixelLineCell,
 } from './pixelLineEngine';
-import type { PixelWaveBands, PixelWaveSeries } from '../shared/pixelWaveEngine';
 
 const BANDS: PixelWaveBands = ['#111', '#333', '#555', '#777', '#999'];
 

@@ -42,7 +42,9 @@ export function DuneChartLoading({
 
   return (
     <div
-      className={['dune-chart-container', 'dune-chart-loading', className].filter(Boolean).join(' ')}
+      className={['dune-chart-container', 'dune-chart-loading', className]
+        .filter(Boolean)
+        .join(' ')}
       style={style}
       role="status"
       aria-busy="true"

@@ -1,5 +1,5 @@
-import { cellAngleDeg, normalizeDeg } from '../shared/polarMath';
 import type { PixelWaveSeries, PlotRect } from '../shared/pixelWaveEngine';
+import { cellAngleDeg, normalizeDeg } from '../shared/polarMath';
 
 const DEFAULT_PIXEL = 2;
 /** Match Recharts radar default outer feel (~80% of half-min plot). */

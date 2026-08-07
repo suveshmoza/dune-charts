@@ -3,7 +3,6 @@ import {
   ensureDitherTileCache,
   type DitherTileCache,
 } from '../shared/ditherTiles';
-import type { PixelRadialBar, PixelRadialPlotLayout } from './pixelRadialEngine';
 import {
   bandIndexFromCrestRow,
   bandIndexFromCrestRowDither,
@@ -13,6 +12,7 @@ import {
   type PixelWaveFill,
   type PixelWaveSeries,
 } from '../shared/pixelWaveEngine';
+import type { PixelRadialBar, PixelRadialPlotLayout } from './pixelRadialEngine';
 
 export type PaintPixelRadialOptions = {
   layout: PixelRadialPlotLayout;

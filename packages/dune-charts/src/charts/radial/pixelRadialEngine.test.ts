@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import type { PixelWaveBands } from '../shared/pixelWaveEngine';
 import { cellAngleDeg, normalizeDeg } from '../shared/polarMath';
 import {
   angleInDirectedSector,
@@ -9,7 +10,6 @@ import {
   computeRadialTracks,
   type PixelRadialBar,
 } from './pixelRadialEngine';
-import type { PixelWaveBands } from '../shared/pixelWaveEngine';
 
 const BANDS: PixelWaveBands = ['#111', '#333', '#555', '#777', '#999'];
 

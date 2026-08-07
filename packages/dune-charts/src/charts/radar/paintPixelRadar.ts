@@ -1,5 +1,4 @@
 import { ensureDitherTileCache, type DitherTileCache } from '../shared/ditherTiles';
-import type { PixelRadarPlotLayout } from './pixelRadarEngine';
 import {
   bandIndexFromCrestRow,
   bandIndexFromCrestRowDither,
@@ -8,6 +7,7 @@ import {
   type PixelWaveFill,
   type PixelWaveSeries,
 } from '../shared/pixelWaveEngine';
+import type { PixelRadarPlotLayout } from './pixelRadarEngine';
 
 export type PaintPixelRadarOptions = {
   layout: PixelRadarPlotLayout;
