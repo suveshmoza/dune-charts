@@ -303,8 +303,8 @@ export function DuneBarChart<T extends Record<string, unknown>>({
         <CartesianGrid
           stroke="var(--dune-grid)"
           strokeWidth={1}
-          vertical={isHorizontalBars}
-          horizontal={!isHorizontalBars}
+          vertical={false}
+          horizontal={false}
         />
         {isHorizontalBars ? (
           <>

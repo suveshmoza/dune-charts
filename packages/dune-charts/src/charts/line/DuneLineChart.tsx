@@ -270,7 +270,12 @@ export function DuneLineChart<T extends Record<string, unknown>>({
         accessibilityLayer={chartAccessibilityLayer}
         {...restChartProps}
       >
-        <CartesianGrid stroke="var(--dune-grid)" strokeWidth={1} vertical={false} />
+        <CartesianGrid
+          stroke="var(--dune-grid)"
+          strokeWidth={1}
+          vertical={false}
+          horizontal={false}
+        />
         <XAxis
           dataKey={index}
           stroke="var(--dune-tick)"
