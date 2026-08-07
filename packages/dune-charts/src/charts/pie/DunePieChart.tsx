@@ -337,6 +337,7 @@ function DunePieChartRoot<T extends Record<string, unknown>>({
               pixel={pixel}
               fill={effectiveFill}
               layoutOptions={layoutOptions}
+              animate={!prefersReducedMotion}
             />
           ) : null}
 

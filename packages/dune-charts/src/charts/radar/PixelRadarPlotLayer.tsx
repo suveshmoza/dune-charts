@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { usePlotArea } from 'recharts';
 
+import { DUNE_DURATION } from '../shared/chartShell';
 import {
   fillShimmerMask,
   SHIMMER_MS,
@@ -20,9 +21,63 @@ export type PixelRadarPlotLayerProps = {
   /**
    * Traveling opacity mask over baked dither polygons (loading skeleton).
    * Same soft beam as area/bar/pie loading.
+   * When true, entrance wipe is skipped.
    */
   shimmer?: boolean;
+  /**
+   * One-shot radial grow from center.
+   * Ignored while `shimmer` is active. Default `true`.
+   */
+  animate?: boolean;
 };
+
+function easeOutCubic(t: number): number {
+  const u = 1 - t;
+  return 1 - u * u * u;
+}
+
+function blitFull(
+  ctx: CanvasRenderingContext2D,
+  bake: HTMLCanvasElement,
+  dpr: number,
+  cssW: number,
+  cssH: number,
+): void {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.clearRect(0, 0, cssW, cssH);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(bake, 0, 0);
+}
+
+function blitRadialGrow(
+  ctx: CanvasRenderingContext2D,
+  bake: HTMLCanvasElement,
+  dpr: number,
+  cssW: number,
+  cssH: number,
+  lcx: number,
+  lcy: number,
+  revealR: number,
+): void {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.clearRect(0, 0, cssW, cssH);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(bake, 0, 0);
+
+  if (revealR <= 0) {
+    ctx.clearRect(0, 0, cssW, cssH);
+    return;
+  }
+
+  ctx.globalCompositeOperation = 'destination-in';
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(lcx, lcy, revealR, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalCompositeOperation = 'source-over';
+}
 
 /**
  * Draws chunky pixel radar polygons inside the Recharts plot area via Canvas2D.
@@ -35,6 +90,7 @@ export function PixelRadarPlotLayer({
   fill = 'bands',
   domainMax,
   shimmer = false,
+  animate = true,
 }: PixelRadarPlotLayerProps) {
   const plot = usePlotArea();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -50,7 +106,7 @@ export function PixelRadarPlotLayer({
     const canvas = canvasRef.current;
     if (canvas == null || layout == null) return;
 
-    const { plotW, plotH } = layout;
+    const { plotW, plotH, plotX, plotY, cx, cy, outerRadius } = layout;
     const dpr = typeof window !== 'undefined' ? Math.max(1, window.devicePixelRatio || 1) : 1;
     const cssW = Math.max(1, plotW);
     const cssH = Math.max(1, plotH);
@@ -80,15 +136,42 @@ export function PixelRadarPlotLayer({
       ditherTiles: ditherTilesRef.current,
     });
 
-    if (!shimmer) {
-      const ctx = canvas.getContext('2d');
-      if (ctx == null) return;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, cssW, cssH);
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(bake, 0, 0);
+    if (shimmer) return;
+
+    const ctx = canvas.getContext('2d');
+    if (ctx == null) return;
+
+    if (!animate) {
+      blitFull(ctx, bake, dpr, cssW, cssH);
+      return;
     }
-  }, [layout, series, fill, shimmer]);
+
+    const lcx = cx - plotX;
+    const lcy = cy - plotY;
+    const maxR = outerRadius + pixel * 2;
+
+    let raf = 0;
+    const start = performance.now();
+
+    const tick = (now: number) => {
+      const liveBake = bakeRef.current;
+      if (liveBake == null) return;
+
+      const t = Math.min(1, (now - start) / DUNE_DURATION);
+      blitRadialGrow(ctx, liveBake, dpr, cssW, cssH, lcx, lcy, maxR * easeOutCubic(t));
+
+      if (t < 1) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        blitFull(ctx, liveBake, dpr, cssW, cssH);
+      }
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+    };
+  }, [layout, series, fill, shimmer, animate, pixel]);
 
   const plotSizeKey = layout == null ? '' : `${layout.plotW}x${layout.plotH}`;
   useLayoutEffect(() => {

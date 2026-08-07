@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { usePlotArea } from 'recharts';
 
+import { DUNE_DURATION } from '../shared/chartShell';
 import {
   fillShimmerMask,
   SHIMMER_MS,
@@ -23,9 +24,82 @@ export type PixelPiePlotLayerProps = {
   /**
    * Traveling opacity mask over baked dither wedges (loading skeleton).
    * Same soft beam as area/bar loading.
+   * When true, entrance wipe is skipped.
    */
   shimmer?: boolean;
+  /**
+   * One-shot angular sweep reveal from `startAngle`.
+   * Ignored while `shimmer` is active. Default `true`.
+   */
+  animate?: boolean;
 };
+
+function easeOutCubic(t: number): number {
+  const u = 1 - t;
+  return 1 - u * u * u;
+}
+
+function degToRad(deg: number): number {
+  return (deg * Math.PI) / 180;
+}
+
+function blitFull(
+  ctx: CanvasRenderingContext2D,
+  bake: HTMLCanvasElement,
+  dpr: number,
+  cssW: number,
+  cssH: number,
+): void {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.clearRect(0, 0, cssW, cssH);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(bake, 0, 0);
+}
+
+/**
+ * Reveal baked pie with a growing wedge.
+ * Recharts: 0° at +x, CCW (via cos(-θ)/sin(-θ)). Canvas: 0° at +x, CW+.
+ * Map rechartsDeg → -canvasRad and sweep with anticlockwise=true.
+ */
+function blitAngularSweep(
+  ctx: CanvasRenderingContext2D,
+  bake: HTMLCanvasElement,
+  dpr: number,
+  cssW: number,
+  cssH: number,
+  lcx: number,
+  lcy: number,
+  radius: number,
+  startAngleDeg: number,
+  sweepDeg: number,
+): void {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.clearRect(0, 0, cssW, cssH);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(bake, 0, 0);
+
+  if (sweepDeg <= 0) {
+    ctx.clearRect(0, 0, cssW, cssH);
+    return;
+  }
+
+  ctx.globalCompositeOperation = 'destination-in';
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  if (sweepDeg >= 360 - 1e-3) {
+    ctx.arc(lcx, lcy, radius, 0, Math.PI * 2);
+  } else {
+    const start = degToRad(-startAngleDeg);
+    const end = degToRad(-(startAngleDeg + sweepDeg));
+    ctx.moveTo(lcx, lcy);
+    ctx.arc(lcx, lcy, radius, start, end, true);
+    ctx.closePath();
+  }
+  ctx.fill();
+  ctx.globalCompositeOperation = 'source-over';
+}
 
 /**
  * Draws chunky pixel pie wedges inside the Recharts plot area via Canvas2D.
@@ -37,6 +111,7 @@ export function PixelPiePlotLayer({
   fill = 'bands',
   layoutOptions,
   shimmer = false,
+  animate = true,
 }: PixelPiePlotLayerProps) {
   const plot = usePlotArea();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -51,11 +126,15 @@ export function PixelPiePlotLayer({
     });
   }, [plot, slices, pixel, layoutOptions]);
 
+  const startAngle = layoutOptions?.startAngle ?? 0;
+  const endAngle = layoutOptions?.endAngle ?? 360;
+  const totalSweep = endAngle - startAngle;
+
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (canvas == null || layout == null) return;
 
-    const { plotW, plotH } = layout;
+    const { plotW, plotH, plotX, plotY, cx, cy, outerRadius } = layout;
     const dpr = typeof window !== 'undefined' ? Math.max(1, window.devicePixelRatio || 1) : 1;
     const cssW = Math.max(1, plotW);
     const cssH = Math.max(1, plotH);
@@ -85,15 +164,44 @@ export function PixelPiePlotLayer({
       ditherTiles: ditherTilesRef.current,
     });
 
-    if (!shimmer) {
-      const ctx = canvas.getContext('2d');
-      if (ctx == null) return;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, cssW, cssH);
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(bake, 0, 0);
+    if (shimmer) return;
+
+    const ctx = canvas.getContext('2d');
+    if (ctx == null) return;
+
+    if (!animate) {
+      blitFull(ctx, bake, dpr, cssW, cssH);
+      return;
     }
-  }, [layout, slices, fill, shimmer]);
+
+    const lcx = cx - plotX;
+    const lcy = cy - plotY;
+    const maskR = outerRadius + pixel * 2;
+    const sweepSpan = Number.isFinite(totalSweep) && Math.abs(totalSweep) > 0 ? totalSweep : 360;
+
+    let raf = 0;
+    const start = performance.now();
+
+    const tick = (now: number) => {
+      const liveBake = bakeRef.current;
+      if (liveBake == null) return;
+
+      const t = Math.min(1, (now - start) / DUNE_DURATION);
+      const sweep = sweepSpan * easeOutCubic(t);
+      blitAngularSweep(ctx, liveBake, dpr, cssW, cssH, lcx, lcy, maskR, startAngle, sweep);
+
+      if (t < 1) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        blitFull(ctx, liveBake, dpr, cssW, cssH);
+      }
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+    };
+  }, [layout, slices, fill, shimmer, animate, startAngle, totalSweep, pixel]);
 
   const plotSizeKey = layout == null ? '' : `${layout.plotW}x${layout.plotH}`;
   useLayoutEffect(() => {

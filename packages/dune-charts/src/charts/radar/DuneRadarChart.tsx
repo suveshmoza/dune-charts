@@ -325,6 +325,7 @@ function DuneRadarChartRoot<T extends Record<string, unknown>>({
               pointCount={data.length}
               pixel={pixel}
               fill={fill}
+              animate={!prefersReducedMotion}
             />
           ) : null}
 
