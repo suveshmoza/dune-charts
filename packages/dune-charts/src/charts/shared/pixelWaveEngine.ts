@@ -6,7 +6,7 @@ export type PixelWaveFill = (typeof PIXEL_WAVE_FILLS)[number];
 /** Crest → depth fills generated from one base hue (or an explicit override). */
 export type PixelWaveBands = readonly [string, string, string, string, string];
 
-/** Classic 4×4 Bayer matrix for ordered dither (values 0–15). */
+/** Classic 4×4 Bayer matrix (values 0–15); kept for 8×8 derivation. */
 export const BAYER_4 = [
   [0, 8, 2, 10],
   [12, 4, 14, 6],
@@ -14,37 +14,92 @@ export const BAYER_4 = [
   [15, 7, 13, 5],
 ] as const;
 
-/** Threshold in 0..1 for ordered dither at integer grid coords. */
+const BAYER_2 = [
+  [0, 2],
+  [3, 1],
+] as const;
+
+/** 8×8 Bayer matrix (values 0–63), derived recursively from BAYER_4. */
+export const BAYER_8: readonly (readonly number[])[] = Array.from({ length: 8 }, (_, y) =>
+  Array.from({ length: 8 }, (_, x) => {
+    const base = BAYER_4[y >> 1]?.[x >> 1] ?? 0;
+    const fine = BAYER_2[y & 1]?.[x & 1] ?? 0;
+    return 4 * base + fine;
+  }),
+);
+
+/** Quantized crest→depth dither steps (0 = solid crest … last = faint floor). */
+export const DITHER_LEVELS = 33;
+/** Rows over which density eases from solid to the floor. */
+export const DITHER_RAMP_ROWS = 56;
+/** Minimum density so tall columns never dissolve to empty. */
+export const DITHER_DENSITY_FLOOR = 0.08;
+const DITHER_SOLID_ROWS = 2;
+
+function easeOutCubic(t: number): number {
+  const u = 1 - t;
+  return 1 - u * u * u;
+}
+
+function buildRowLevelLookup(): Uint8Array {
+  const size = DITHER_RAMP_ROWS + 8;
+  const lookup = new Uint8Array(size);
+  const rampSpan = Math.max(1, DITHER_RAMP_ROWS - DITHER_SOLID_ROWS);
+  for (let row = 0; row < size; row += 1) {
+    if (row < DITHER_SOLID_ROWS) {
+      lookup[row] = 0;
+      continue;
+    }
+    const t = Math.min(1, (row - DITHER_SOLID_ROWS) / rampSpan);
+    lookup[row] = Math.round(easeOutCubic(t) * (DITHER_LEVELS - 1));
+  }
+  return lookup;
+}
+
+const ROW_LEVEL_LOOKUP = buildRowLevelLookup();
+
+/** Threshold in 0..1 for ordered dither at integer grid coords (period 8). */
 export function ditherThreshold(x: number, y: number): number {
-  const row = BAYER_4[y & 3];
-  const cell = row?.[x & 3] ?? 0;
-  return (cell + 0.5) / 16;
+  const row = BAYER_8[y & 7];
+  const cell = row?.[x & 7] ?? 0;
+  return (cell + 0.5) / 64;
 }
 
 /**
- * Crest→depth dither density for a band ribbon.
- * Higher near the crest so the series color reads denser at the edge.
+ * Crest→depth dither density for a band ribbon (legacy 5-step map).
+ * Prefer `ditherDensityForLevel` for the continuous dither ramp.
  */
 export function ditherDensityForBand(bandIndex: 0 | 1 | 2 | 3 | 4): number {
   return [0.82, 0.7, 0.58, 0.46, 0.34][bandIndex] ?? 0.5;
 }
 
-/** Darken a CSS color for the dither mesh shadow tone. */
-function darkenForDither(color: string, amount = 0.55): string {
-  const parsed = parseCssColor(color);
-  if (parsed == null) return color;
-  return hslToCss(parsed.h, Math.min(parsed.s, 70), Math.max(10, parsed.l * (1 - amount)));
+/** Quantized dither level for a crest-relative row (0 = solid … last = floor). */
+export function ditherLevelForCrestRow(row: number): number {
+  if (row <= 0) return 0;
+  if (row >= ROW_LEVEL_LOOKUP.length) return DITHER_LEVELS - 1;
+  return ROW_LEVEL_LOOKUP[row] ?? DITHER_LEVELS - 1;
 }
 
-/** Band color + darkened sibling used as the dither hi/lo tones. */
-export function ditherPairFromBands(
-  bands: PixelWaveBands,
-  bandIndex: 0 | 1 | 2 | 3 | 4,
-): readonly [string, string] {
-  const hi = bands[bandIndex] ?? bands[0] ?? '#888888';
-  // Strong charcoal twin (same hue) so Bayer reads like the reference mesh.
-  const lo = darkenForDither(hi);
-  return [hi, lo];
+/** Density in 0..1 for a quantized dither level. */
+export function ditherDensityForLevel(level: number): number {
+  const l = Math.max(0, Math.min(DITHER_LEVELS - 1, level));
+  return 1 - (l / (DITHER_LEVELS - 1)) * (1 - DITHER_DENSITY_FLOOR);
+}
+
+/** Single tone for dither fills — density alone carries crest→depth. */
+export function ditherToneFromBands(bands: PixelWaveBands): string {
+  return bands[0] ?? '#888888';
+}
+
+/**
+ * Opaque low tone for the dither underpaint — same hue as `tone`, darkened so
+ * Bayer off-cells read as depth instead of exposing the chart background.
+ * Falls back to the input color when it can't be parsed.
+ */
+export function ditherLowToneFromColor(tone: string, amount = 0.45): string {
+  const parsed = parseCssColor(tone);
+  if (parsed == null) return tone;
+  return hslToCss(parsed.h, Math.min(parsed.s, 70), Math.max(10, parsed.l * (1 - amount)));
 }
 
 export type DitherPatternCell = {
@@ -54,21 +109,27 @@ export type DitherPatternCell = {
   fill: string;
 };
 
-/** Build one Bayer tile of solid subpixels between `hi` and `lo`. */
+/**
+ * Build one Bayer tile of solid subpixels between `hi` and `lo`.
+ * When `lo` is `'transparent'`, off cells are omitted (canvas stays clear).
+ */
 export function buildBayerTile(
   hi: string,
   lo: string,
   density: number,
-  subpixel = 2,
+  subpixel = 1,
 ): DitherPatternCell[] {
   const cells: DitherPatternCell[] = [];
-  for (let y = 0; y < 4; y += 1) {
-    for (let x = 0; x < 4; x += 1) {
+  const skipLo = lo === 'transparent';
+  for (let y = 0; y < 8; y += 1) {
+    for (let x = 0; x < 8; x += 1) {
+      const on = density > ditherThreshold(x, y);
+      if (!on && skipLo) continue;
       cells.push({
         x: x * subpixel,
         y: y * subpixel,
         size: subpixel,
-        fill: density > ditherThreshold(x, y) ? hi : lo,
+        fill: on ? hi : lo,
       });
     }
   }
@@ -315,18 +376,6 @@ export function bandIndexFromCrestRow(row: number): 0 | 1 | 2 | 3 | 4 {
   if (row < 5) return 1;
   if (row < 9) return 2;
   if (row < 14) return 3;
-  return 4;
-}
-
-/**
- * Wider crest→depth steps for dither so each Bayer density holds longer
- * (solid `bands` keep the tighter ribbon map above).
- */
-export function bandIndexFromCrestRowDither(row: number): 0 | 1 | 2 | 3 | 4 {
-  if (row < 6) return 0;
-  if (row < 18) return 1;
-  if (row < 32) return 2;
-  if (row < 48) return 3;
   return 4;
 }
 

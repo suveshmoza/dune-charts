@@ -1,16 +1,15 @@
 import {
-  createDitherTileCanvas,
-  ensureDitherTileCache,
-  type DitherTileCache,
+  createEmptyLevelPaths,
+  ensureLevelPath,
+  fillDitherLevelPaths,
+  type DitherPatternCache,
 } from '../shared/ditherTiles';
 import {
   bandIndexFromCrestRow,
-  bandIndexFromCrestRowDither,
-  ditherDensityForBand,
-  ditherPairFromBands,
+  ditherLevelForCrestRow,
+  ditherToneFromBands,
   type PixelWaveBands,
   type PixelWaveFill,
-  type PixelWaveSeries,
 } from '../shared/pixelWaveEngine';
 import type { PixelRadialBar, PixelRadialPlotLayout } from './pixelRadialEngine';
 
@@ -22,7 +21,6 @@ export type PaintPixelRadialOptions = {
   trackColor?: string;
   /** When `true`, paint unfilled track remainder cells. Default `false`. */
   paintTracks?: boolean;
-  ditherTiles?: DitherTileCache;
 };
 
 const DEFAULT_TRACK_COLOR = '#eceae4';
@@ -104,24 +102,9 @@ function trackBandsFromColor(color: string): PixelWaveBands {
   ];
 }
 
-/** Soft dither twin — series dither darkens ~55%, which turns gray tracks muddy. */
-function softTrackDitherPair(
-  bands: PixelWaveBands,
-  bandIndex: 0 | 1 | 2 | 3 | 4,
-): readonly [string, string] {
-  const hi = bands[bandIndex] ?? bands[0] ?? DEFAULT_TRACK_COLOR;
-  const parsed = parseRgb(hi);
-  if (parsed == null) return [hi, '#d0ccc4'];
-  const lo = rgbToHex(mixRgb(parsed, { r: 0, g: 0, b: 0 }, 0.1));
-  return [hi, lo];
-}
-
-function barsAsSeries(bars: readonly PixelRadialBar[]): PixelWaveSeries[] {
-  return bars.map((b) => ({
-    name: b.name,
-    values: [b.value],
-    bands: b.bands,
-  }));
+/** Soft track tone — mid band of the light gray ramp (no muddy dark twin). */
+function softTrackTone(bands: PixelWaveBands): string {
+  return bands[2] ?? bands[0] ?? DEFAULT_TRACK_COLOR;
 }
 
 /**
@@ -147,54 +130,53 @@ export function paintPixelRadial(
 
   const byName = new Map(bars.map((b) => [b.name, b]));
   const trackBands = paintTracks ? trackBandsFromColor(trackColor) : null;
-  const ditherTiles =
-    fill === 'dither'
-      ? ensureDitherTileCache(barsAsSeries(bars), options.ditherTiles ?? new Map())
-      : null;
-  const patternCache = new Map<string, CanvasPattern | null>();
+
+  if (fill === 'dither') {
+    const patternCache: DitherPatternCache = new Map();
+    const trackPaths = paintTracks ? createEmptyLevelPaths() : null;
+    const pathsByBar = new Map<string, (Path2D | null)[]>();
+
+    for (const cell of cells) {
+      if (cell.kind === 'track') {
+        if (trackPaths == null) continue;
+        const level = ditherLevelForCrestRow(cell.crestRow);
+        const path = ensureLevelPath(trackPaths, level);
+        path.rect(cell.x - plotX, cell.y - plotY, pixel, pixel);
+        continue;
+      }
+
+      let paths = pathsByBar.get(cell.barName);
+      if (paths == null) {
+        paths = createEmptyLevelPaths();
+        pathsByBar.set(cell.barName, paths);
+      }
+      const level = ditherLevelForCrestRow(cell.crestRow);
+      const path = ensureLevelPath(paths, level);
+      path.rect(cell.x - plotX, cell.y - plotY, pixel, pixel);
+    }
+
+    // Tracks under bars — light underpaint keeps the ring soft, not muddy.
+    if (trackPaths != null && trackBands != null) {
+      const trackTone = softTrackTone(trackBands);
+      fillDitherLevelPaths(ctx, trackPaths, patternCache, trackTone, plotX, plotY, trackTone);
+    }
+
+    for (const [name, paths] of pathsByBar) {
+      const bar = byName.get(name);
+      if (bar == null) continue;
+      fillDitherLevelPaths(ctx, paths, patternCache, ditherToneFromBands(bar.bands), plotX, plotY);
+    }
+    return;
+  }
 
   for (const cell of cells) {
     if (cell.kind === 'track' && !paintTracks) continue;
 
-    const localX = cell.x - plotX;
-    const localY = cell.y - plotY;
-
     const bands = cell.kind === 'track' ? trackBands : byName.get(cell.barName)?.bands;
     if (bands == null) continue;
 
-    const band =
-      fill === 'dither'
-        ? bandIndexFromCrestRowDither(cell.crestRow)
-        : bandIndexFromCrestRow(cell.crestRow);
-
-    if (fill === 'dither' && ditherTiles != null) {
-      const [hi, lo] =
-        cell.kind === 'track' ? softTrackDitherPair(bands, band) : ditherPairFromBands(bands, band);
-      const density = ditherDensityForBand(band);
-      const key = `${hi}|${lo}|${density}`;
-      let pattern = patternCache.get(key);
-      if (pattern === undefined) {
-        let tile = ditherTiles.get(key);
-        if (tile == null && cell.kind === 'track') {
-          tile = createDitherTileCanvas(hi, lo, density);
-          ditherTiles.set(key, tile);
-        }
-        pattern = tile != null ? ctx.createPattern(tile, 'repeat') : null;
-        if (pattern != null && 'setTransform' in pattern) {
-          pattern.setTransform(new DOMMatrix().translateSelf(-plotX, -plotY));
-        }
-        patternCache.set(key, pattern);
-      }
-      if (pattern != null) {
-        ctx.fillStyle = pattern;
-        ctx.fillRect(localX, localY, pixel, pixel);
-        continue;
-      }
-    }
-
+    const band = bandIndexFromCrestRow(cell.crestRow);
     ctx.fillStyle = bands[band] ?? bands[0] ?? DEFAULT_TRACK_COLOR;
-    ctx.fillRect(localX, localY, pixel, pixel);
+    ctx.fillRect(cell.x - plotX, cell.y - plotY, pixel, pixel);
   }
 }
-
-export { ensureDitherTileCache, type DitherTileCache };

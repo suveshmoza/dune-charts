@@ -1,15 +1,21 @@
 import { describe, expect, it } from 'vitest';
 
+import { ditherTileKey } from './ditherTiles';
 import {
   bandIndexFromCrestRow,
-  bandIndexFromCrestRowDither,
   bandsFromColor,
   bandsFromHue,
   buildBayerTile,
   computePixelWavePlotLayout,
   ditherDensityForBand,
-  ditherPairFromBands,
+  ditherDensityForLevel,
+  ditherLevelForCrestRow,
+  ditherLowToneFromColor,
   ditherThreshold,
+  ditherToneFromBands,
+  DITHER_DENSITY_FLOOR,
+  DITHER_LEVELS,
+  DITHER_RAMP_ROWS,
   fractionalIndexFromX,
   resolveSeriesBands,
   sampleSeriesAt,
@@ -73,14 +79,14 @@ describe('resolveSeriesBands', () => {
 });
 
 describe('dither helpers', () => {
-  it('ditherThreshold stays in (0,1) and is periodic every 4', () => {
-    for (let y = 0; y < 8; y += 1) {
-      for (let x = 0; x < 8; x += 1) {
+  it('ditherThreshold stays in (0,1) and is periodic every 8', () => {
+    for (let y = 0; y < 16; y += 1) {
+      for (let x = 0; x < 16; x += 1) {
         const t = ditherThreshold(x, y);
         expect(t).toBeGreaterThan(0);
         expect(t).toBeLessThan(1);
-        expect(ditherThreshold(x + 4, y)).toBe(t);
-        expect(ditherThreshold(x, y + 4)).toBe(t);
+        expect(ditherThreshold(x + 8, y)).toBe(t);
+        expect(ditherThreshold(x, y + 8)).toBe(t);
       }
     }
   });
@@ -92,18 +98,62 @@ describe('dither helpers', () => {
     }
   });
 
-  it('ditherPairFromBands darkens lo relative to hi', () => {
-    const [hi, lo] = ditherPairFromBands(BANDS, 2);
-    expect(hi).toBe(BANDS[2]);
-    expect(lo).not.toBe(hi);
-    // lo is hsl with lower lightness than a mid gray twin of #555555
-    expect(lo).toMatch(/^hsl\(/);
+  it('ditherToneFromBands uses the crest color', () => {
+    expect(ditherToneFromBands(BANDS)).toBe(BANDS[0]);
   });
 
-  it('buildBayerTile has 16 cells; density extremes are solid', () => {
-    expect(buildBayerTile('#fff', '#000', 0.5)).toHaveLength(16);
+  it('ditherLowToneFromColor darkens same-hue and falls back on bad input', () => {
+    const low = ditherLowToneFromColor('hsl(210 60% 50%)');
+    expect(low).toMatch(/^hsl\(210 /);
+    const match = low.match(/^hsl\(\d+ \d+% (\d+)%\)$/);
+    expect(match).not.toBeNull();
+    expect(Number(match?.[1])).toBeLessThan(50);
+    expect(ditherLowToneFromColor('not-a-color')).toBe('not-a-color');
+  });
+
+  it('ditherLowToneFromColor amount deepens the darkening', () => {
+    const l = (css: string) => Number(css.match(/(\d+)%\)$/)?.[1]);
+    expect(l(ditherLowToneFromColor('#4488cc', 0.75))).toBeLessThan(
+      l(ditherLowToneFromColor('#4488cc', 0.35)),
+    );
+  });
+
+  it('buildBayerTile has up to 64 cells; transparent lo skips off cells', () => {
+    expect(buildBayerTile('#fff', '#000', 0.5)).toHaveLength(64);
     expect(buildBayerTile('#fff', '#000', 1).every((c) => c.fill === '#fff')).toBe(true);
     expect(buildBayerTile('#fff', '#000', 0).every((c) => c.fill === '#000')).toBe(true);
+    expect(buildBayerTile('#fff', 'transparent', 1)).toHaveLength(64);
+    expect(buildBayerTile('#fff', 'transparent', 0)).toHaveLength(0);
+    expect(buildBayerTile('#fff', 'transparent', 0.5).every((c) => c.fill === '#fff')).toBe(true);
+  });
+
+  it('ditherDensityForLevel is solid at crest and floors at depth', () => {
+    expect(ditherDensityForLevel(0)).toBe(1);
+    expect(ditherDensityForLevel(DITHER_LEVELS - 1)).toBeCloseTo(DITHER_DENSITY_FLOOR);
+    for (let i = 1; i < DITHER_LEVELS; i += 1) {
+      expect(ditherDensityForLevel(i)).toBeLessThan(ditherDensityForLevel(i - 1));
+    }
+  });
+
+  it('ditherLevelForCrestRow is monotonically non-increasing in density', () => {
+    expect(ditherLevelForCrestRow(0)).toBe(0);
+    expect(ditherLevelForCrestRow(1)).toBe(0);
+    expect(ditherLevelForCrestRow(DITHER_RAMP_ROWS + 10)).toBe(DITHER_LEVELS - 1);
+
+    let prev = ditherLevelForCrestRow(0);
+    for (let row = 1; row <= DITHER_RAMP_ROWS + 20; row += 1) {
+      const level = ditherLevelForCrestRow(row);
+      expect(level).toBeGreaterThanOrEqual(prev);
+      prev = level;
+    }
+  });
+
+  it('every dither level maps to a distinct tile key', () => {
+    const tone = ditherToneFromBands(BANDS);
+    const keys = new Set(
+      Array.from({ length: DITHER_LEVELS }, (_, level) => ditherTileKey(tone, level)),
+    );
+    expect(keys.size).toBe(DITHER_LEVELS);
   });
 });
 
@@ -118,20 +168,6 @@ describe('bandIndexFromCrestRow', () => {
     expect(bandIndexFromCrestRow(9)).toBe(3);
     expect(bandIndexFromCrestRow(13)).toBe(3);
     expect(bandIndexFromCrestRow(14)).toBe(4);
-  });
-});
-
-describe('bandIndexFromCrestRowDither', () => {
-  it('uses wider row boundaries than solid bands', () => {
-    expect(bandIndexFromCrestRowDither(0)).toBe(0);
-    expect(bandIndexFromCrestRowDither(5)).toBe(0);
-    expect(bandIndexFromCrestRowDither(6)).toBe(1);
-    expect(bandIndexFromCrestRowDither(17)).toBe(1);
-    expect(bandIndexFromCrestRowDither(18)).toBe(2);
-    expect(bandIndexFromCrestRowDither(31)).toBe(2);
-    expect(bandIndexFromCrestRowDither(32)).toBe(3);
-    expect(bandIndexFromCrestRowDither(47)).toBe(3);
-    expect(bandIndexFromCrestRowDither(48)).toBe(4);
   });
 });
 

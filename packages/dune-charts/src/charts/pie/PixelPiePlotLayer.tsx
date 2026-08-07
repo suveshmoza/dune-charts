@@ -9,7 +9,7 @@ import {
   SHIMMER_TRAVEL_START,
 } from '../shared/loadingShimmerMask';
 import type { PixelWaveFill } from '../shared/pixelWaveEngine';
-import { paintPixelPie, type DitherTileCache } from './paintPixelPie';
+import { paintPixelPie } from './paintPixelPie';
 import {
   computePixelPieLayout,
   type PixelPieLayoutOptions,
@@ -110,7 +110,6 @@ export function PixelPiePlotLayer({
 }: PixelPiePlotLayerProps) {
   const plot = usePlotArea();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const ditherTilesRef = useRef<DitherTileCache>(new Map());
   const bakeRef = useRef<HTMLCanvasElement | null>(null);
   const entranceDoneRef = useRef(false);
 
@@ -157,7 +156,6 @@ export function PixelPiePlotLayer({
       layout,
       slices,
       fill,
-      ditherTiles: ditherTilesRef.current,
     });
 
     if (shimmer) return;

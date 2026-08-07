@@ -9,7 +9,7 @@ import {
   SHIMMER_TRAVEL_START,
 } from '../shared/loadingShimmerMask';
 import type { PixelWaveFill } from '../shared/pixelWaveEngine';
-import { paintPixelRadial, type DitherTileCache } from './paintPixelRadial';
+import { paintPixelRadial } from './paintPixelRadial';
 import {
   computePixelRadialLayout,
   computePixelRadialLayoutFromHits,
@@ -126,7 +126,6 @@ export function PixelRadialPlotLayer({
 }: PixelRadialPlotLayerProps) {
   const plot = usePlotArea();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const ditherTilesRef = useRef<DitherTileCache>(new Map());
   const bakeRef = useRef<HTMLCanvasElement | null>(null);
   const entranceDoneRef = useRef(false);
 
@@ -185,7 +184,6 @@ export function PixelRadialPlotLayer({
       fill,
       trackColor,
       paintTracks,
-      ditherTiles: ditherTilesRef.current,
     });
 
     if (shimmer) return;

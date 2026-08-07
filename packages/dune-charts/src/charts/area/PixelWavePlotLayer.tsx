@@ -13,7 +13,7 @@ import {
   type PixelWaveFill,
   type PixelWaveSeries,
 } from '../shared/pixelWaveEngine';
-import { paintPixelWave, type DitherTileCache } from './paintPixelWave';
+import { paintPixelWave } from './paintPixelWave';
 
 export type PixelWavePlotLayerProps = {
   series: readonly PixelWaveSeries[];
@@ -21,7 +21,7 @@ export type PixelWavePlotLayerProps = {
   /** Category / index values aligned with `pointCount` for X-scale mapping. */
   indexValues?: readonly unknown[];
   pixel?: number;
-  /** `bands` = solid crest→depth ribbons (default). `dither` = Bayer mesh inside cells. */
+  /** `bands` = solid crest→depth ribbons (default). `dither` = continuous Bayer mesh. */
   fill?: PixelWaveFill;
   /**
    * Traveling opacity mask over a baked paint (loading skeleton).
@@ -86,7 +86,6 @@ export function PixelWavePlotLayer({
   const yScale = useYAxisScale();
   const xScale = useXAxisScale();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const ditherTilesRef = useRef<DitherTileCache>(new Map());
   const bakeRef = useRef<HTMLCanvasElement | null>(null);
   const entranceDoneRef = useRef(false);
 
@@ -136,7 +135,6 @@ export function PixelWavePlotLayer({
       layout,
       series,
       fill,
-      ditherTiles: ditherTilesRef.current,
     });
 
     if (shimmer) return;

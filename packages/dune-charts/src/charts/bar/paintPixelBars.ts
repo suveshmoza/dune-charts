@@ -1,9 +1,13 @@
-import { ensureDitherTileCache, type DitherTileCache } from '../shared/ditherTiles';
+import {
+  createEmptyLevelPaths,
+  ensureLevelPath,
+  fillDitherLevelPaths,
+  type DitherPatternCache,
+} from '../shared/ditherTiles';
 import {
   bandIndexFromCrestRow,
-  bandIndexFromCrestRowDither,
-  ditherDensityForBand,
-  ditherPairFromBands,
+  ditherLevelForCrestRow,
+  ditherToneFromBands,
   sortDrawOrder,
   type PixelWaveFill,
   type PixelWaveSeries,
@@ -14,83 +18,27 @@ export type PaintPixelBarsOptions = {
   layout: PixelBarPlotLayout;
   series: readonly PixelWaveSeries[];
   fill?: PixelWaveFill;
-  ditherTiles?: DitherTileCache;
 };
 
-function paintBarCell(
-  ctx: CanvasRenderingContext2D,
-  seriesDef: PixelWaveSeries,
-  localX: number,
-  localY: number,
-  pixel: number,
-  band: 0 | 1 | 2 | 3 | 4,
-  fill: PixelWaveFill,
-  ditherTiles: DitherTileCache | null,
-  patternCache: Map<string, CanvasPattern | null>,
-  plotX: number,
-  plotY: number,
-): void {
-  if (fill === 'dither' && ditherTiles != null) {
-    const [hi, lo] = ditherPairFromBands(seriesDef.bands, band);
-    const density = ditherDensityForBand(band);
-    const key = `${hi}|${lo}|${density}`;
-    let pattern = patternCache.get(key);
-    if (pattern === undefined) {
-      const tile = ditherTiles.get(key);
-      pattern = tile != null ? ctx.createPattern(tile, 'repeat') : null;
-      if (pattern != null && 'setTransform' in pattern) {
-        pattern.setTransform(new DOMMatrix().translateSelf(-plotX, -plotY));
-      }
-      patternCache.set(key, pattern);
-    }
-    if (pattern != null) {
-      ctx.fillStyle = pattern;
-      ctx.fillRect(localX, localY, pixel, pixel);
-      return;
-    }
-  }
-
-  ctx.fillStyle = seriesDef.bands[band] ?? seriesDef.bands[0] ?? '#888888';
-  ctx.fillRect(localX, localY, pixel, pixel);
-}
-
-function paintSegment(
+function paintSegmentBands(
   ctx: CanvasRenderingContext2D,
   seg: PixelBarSegment,
   seriesDef: PixelWaveSeries,
   pixel: number,
   plotX: number,
   plotY: number,
-  fill: PixelWaveFill,
-  ditherTiles: DitherTileCache | null,
-  patternCache: Map<string, CanvasPattern | null>,
 ): void {
   if (seg.cellCount <= 0) return;
-
-  const bandFor = (row: number) =>
-    fill === 'dither' ? bandIndexFromCrestRowDither(row) : bandIndexFromCrestRow(row);
 
   if (seg.crest === 'top') {
     const cols = Math.max(1, Math.floor(seg.width / pixel));
     const localX0 = seg.x - plotX;
+    const width = cols * pixel;
     for (let row = 0; row < seg.cellCount; row += 1) {
-      const band = bandFor(row);
+      const band = bandIndexFromCrestRow(row);
       const localY = seg.y + row * pixel - plotY;
-      for (let c = 0; c < cols; c += 1) {
-        paintBarCell(
-          ctx,
-          seriesDef,
-          localX0 + c * pixel,
-          localY,
-          pixel,
-          band,
-          fill,
-          ditherTiles,
-          patternCache,
-          plotX,
-          plotY,
-        );
-      }
+      ctx.fillStyle = seriesDef.bands[band] ?? seriesDef.bands[0] ?? '#888888';
+      ctx.fillRect(localX0, localY, width, pixel);
     }
     return;
   }
@@ -98,24 +46,63 @@ function paintSegment(
   // crest === 'right' — horizontal bars; crest at the free (right) end
   const rows = Math.max(1, Math.floor(seg.height / pixel));
   const localY0 = seg.y - plotY;
+  const height = rows * pixel;
   for (let col = 0; col < seg.cellCount; col += 1) {
-    const band = bandFor(col);
+    const band = bandIndexFromCrestRow(col);
     const localX = seg.x + seg.width - (col + 1) * pixel - plotX;
-    for (let r = 0; r < rows; r += 1) {
-      paintBarCell(
-        ctx,
-        seriesDef,
-        localX,
-        localY0 + r * pixel,
-        pixel,
-        band,
-        fill,
-        ditherTiles,
-        patternCache,
-        plotX,
-        plotY,
-      );
+    ctx.fillStyle = seriesDef.bands[band] ?? seriesDef.bands[0] ?? '#888888';
+    ctx.fillRect(localX, localY0, pixel, height);
+  }
+}
+
+function appendSegmentDitherRuns(
+  paths: (Path2D | null)[],
+  seg: PixelBarSegment,
+  pixel: number,
+  plotX: number,
+  plotY: number,
+): void {
+  if (seg.cellCount <= 0) return;
+
+  if (seg.crest === 'top') {
+    const cols = Math.max(1, Math.floor(seg.width / pixel));
+    const localX0 = seg.x - plotX;
+    const width = cols * pixel;
+
+    let runLevel = -1;
+    let runStart = 0;
+    for (let row = 0; row <= seg.cellCount; row += 1) {
+      const level = row < seg.cellCount ? ditherLevelForCrestRow(row) : -1;
+      if (level === runLevel) continue;
+      if (runLevel >= 0) {
+        const path = ensureLevelPath(paths, runLevel);
+        path.rect(localX0, seg.y + runStart * pixel - plotY, width, (row - runStart) * pixel);
+      }
+      runLevel = level;
+      runStart = row;
     }
+    return;
+  }
+
+  // crest === 'right'
+  const rows = Math.max(1, Math.floor(seg.height / pixel));
+  const localY0 = seg.y - plotY;
+  const height = rows * pixel;
+
+  let runLevel = -1;
+  let runStart = 0;
+  for (let col = 0; col <= seg.cellCount; col += 1) {
+    const level = col < seg.cellCount ? ditherLevelForCrestRow(col) : -1;
+    if (level === runLevel) continue;
+    if (runLevel >= 0) {
+      const path = ensureLevelPath(paths, runLevel);
+      const runCols = col - runStart;
+      // Crest is on the right; runStart is near crest (right), later cols go left.
+      const localX = seg.x + seg.width - col * pixel - plotX;
+      path.rect(localX, localY0, runCols * pixel, height);
+    }
+    runLevel = level;
+    runStart = col;
   }
 }
 
@@ -135,9 +122,27 @@ export function paintPixelBars(
 
   const byName = new Map(series.map((s) => [s.name, s]));
   const drawOrder = sortDrawOrder(series);
-  const ditherTiles =
-    fill === 'dither' ? ensureDitherTileCache(series, options.ditherTiles ?? new Map()) : null;
-  const patternCache = new Map<string, CanvasPattern | null>();
+
+  if (fill === 'dither') {
+    const patternCache: DitherPatternCache = new Map();
+
+    for (const s of drawOrder) {
+      const seriesDef = byName.get(s.name);
+      if (seriesDef == null) continue;
+      const tone = ditherToneFromBands(seriesDef.bands);
+      const paths = createEmptyLevelPaths();
+
+      for (const group of layout.groups) {
+        for (const seg of group.segments) {
+          if (seg.seriesName !== s.name) continue;
+          appendSegmentDitherRuns(paths, seg, pixel, plotX, plotY);
+        }
+      }
+
+      fillDitherLevelPaths(ctx, paths, patternCache, tone, plotX, plotY);
+    }
+    return;
+  }
 
   for (const s of drawOrder) {
     for (const group of layout.groups) {
@@ -145,10 +150,8 @@ export function paintPixelBars(
         if (seg.seriesName !== s.name) continue;
         const seriesDef = byName.get(s.name);
         if (seriesDef == null) continue;
-        paintSegment(ctx, seg, seriesDef, pixel, plotX, plotY, fill, ditherTiles, patternCache);
+        paintSegmentBands(ctx, seg, seriesDef, pixel, plotX, plotY);
       }
     }
   }
 }
-
-export { ensureDitherTileCache, type DitherTileCache };

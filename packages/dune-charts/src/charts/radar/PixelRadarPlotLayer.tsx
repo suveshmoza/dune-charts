@@ -9,7 +9,7 @@ import {
   SHIMMER_TRAVEL_START,
 } from '../shared/loadingShimmerMask';
 import type { PixelWaveFill, PixelWaveSeries } from '../shared/pixelWaveEngine';
-import { paintPixelRadar, type DitherTileCache } from './paintPixelRadar';
+import { paintPixelRadar } from './paintPixelRadar';
 import { computePixelRadarLayout } from './pixelRadarEngine';
 
 export type PixelRadarPlotLayerProps = {
@@ -89,7 +89,6 @@ export function PixelRadarPlotLayer({
 }: PixelRadarPlotLayerProps) {
   const plot = usePlotArea();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const ditherTilesRef = useRef<DitherTileCache>(new Map());
   const bakeRef = useRef<HTMLCanvasElement | null>(null);
   const entranceDoneRef = useRef(false);
 
@@ -129,7 +128,6 @@ export function PixelRadarPlotLayer({
       layout,
       series,
       fill,
-      ditherTiles: ditherTilesRef.current,
     });
 
     if (shimmer) return;

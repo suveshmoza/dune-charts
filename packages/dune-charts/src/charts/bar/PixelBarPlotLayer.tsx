@@ -9,7 +9,7 @@ import {
   SHIMMER_TRAVEL_START,
 } from '../shared/loadingShimmerMask';
 import type { PixelWaveFill, PixelWaveSeries } from '../shared/pixelWaveEngine';
-import { paintPixelBars, type DitherTileCache } from './paintPixelBars';
+import { paintPixelBars } from './paintPixelBars';
 import { computePixelBarPlotLayout, type PixelBarChartLayout } from './pixelBarEngine';
 
 export type PixelBarPlotLayerProps = {
@@ -107,7 +107,6 @@ export function PixelBarPlotLayer({
   const yScale = useYAxisScale();
   const xScale = useXAxisScale();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const ditherTilesRef = useRef<DitherTileCache>(new Map());
   const bakeRef = useRef<HTMLCanvasElement | null>(null);
   const entranceDoneRef = useRef(false);
 
@@ -176,7 +175,6 @@ export function PixelBarPlotLayer({
       layout: barLayout,
       series,
       fill,
-      ditherTiles: ditherTilesRef.current,
     });
 
     if (shimmer) return;

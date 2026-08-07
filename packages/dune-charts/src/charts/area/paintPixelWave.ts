@@ -1,9 +1,13 @@
-import { ditherTileKey, ensureDitherTileCache, type DitherTileCache } from '../shared/ditherTiles';
+import {
+  createEmptyLevelPaths,
+  ensureLevelPath,
+  fillDitherLevelPaths,
+  type DitherPatternCache,
+} from '../shared/ditherTiles';
 import {
   bandIndexFromCrestRow,
-  bandIndexFromCrestRowDither,
-  ditherDensityForBand,
-  ditherPairFromBands,
+  ditherLevelForCrestRow,
+  ditherToneFromBands,
   sortDrawOrder,
   type PixelWaveFill,
   type PixelWavePlotLayout,
@@ -14,8 +18,6 @@ export type PaintPixelWaveOptions = {
   layout: PixelWavePlotLayout;
   series: readonly PixelWaveSeries[];
   fill?: PixelWaveFill;
-  /** Mutable cache of Bayer tile canvases (keyed by hi|lo|density). */
-  ditherTiles?: DitherTileCache;
 };
 
 /**
@@ -33,10 +35,38 @@ export function paintPixelWave(
   ctx.imageSmoothingEnabled = false;
 
   const drawOrder = sortDrawOrder(series);
-  const ditherTiles =
-    fill === 'dither' ? ensureDitherTileCache(series, options.ditherTiles ?? new Map()) : null;
 
-  const patternCache = new Map<string, CanvasPattern | null>();
+  if (fill === 'dither') {
+    const patternCache: DitherPatternCache = new Map();
+
+    for (const s of drawOrder) {
+      const tone = ditherToneFromBands(s.bands);
+      const paths = createEmptyLevelPaths();
+
+      for (const col of layout.columns) {
+        const topY = col.topY[s.name] ?? 0;
+        const cellCount = col.cellCount[s.name] ?? 0;
+        if (cellCount <= 0) continue;
+        const localX = col.x - plotX;
+
+        let runLevel = -1;
+        let runStart = 0;
+        for (let row = 0; row <= cellCount; row += 1) {
+          const level = row < cellCount ? ditherLevelForCrestRow(row) : -1;
+          if (level === runLevel) continue;
+          if (runLevel >= 0) {
+            const path = ensureLevelPath(paths, runLevel);
+            path.rect(localX, topY + runStart * pixel - plotY, pixel, (row - runStart) * pixel);
+          }
+          runLevel = level;
+          runStart = row;
+        }
+      }
+
+      fillDitherLevelPaths(ctx, paths, patternCache, tone, plotX, plotY);
+    }
+    return;
+  }
 
   for (const s of drawOrder) {
     for (const col of layout.columns) {
@@ -45,31 +75,8 @@ export function paintPixelWave(
       const localX = col.x - plotX;
 
       for (let row = 0; row < cellCount; row += 1) {
-        const band =
-          fill === 'dither' ? bandIndexFromCrestRowDither(row) : bandIndexFromCrestRow(row);
+        const band = bandIndexFromCrestRow(row);
         const localY = topY + row * pixel - plotY;
-
-        if (fill === 'dither' && ditherTiles != null) {
-          const [hi, lo] = ditherPairFromBands(s.bands, band);
-          const density = ditherDensityForBand(band);
-          const key = ditherTileKey(hi, lo, density);
-          let pattern = patternCache.get(key);
-          if (pattern === undefined) {
-            const tile = ditherTiles.get(key);
-            pattern = tile != null ? ctx.createPattern(tile, 'repeat') : null;
-            if (pattern != null && 'setTransform' in pattern) {
-              // Align pattern to SVG user space (canvas origin = plot origin).
-              pattern.setTransform(new DOMMatrix().translateSelf(-plotX, -plotY));
-            }
-            patternCache.set(key, pattern);
-          }
-          if (pattern != null) {
-            ctx.fillStyle = pattern;
-            ctx.fillRect(localX, localY, pixel, pixel);
-            continue;
-          }
-        }
-
         ctx.fillStyle = s.bands[band] ?? s.bands[0] ?? '#888888';
         ctx.fillRect(localX, localY, pixel, pixel);
       }
@@ -79,8 +86,7 @@ export function paintPixelWave(
 
 export {
   createDitherTileCanvas,
-  ensureDitherTileCache,
-  type DitherTileCache,
+  getDitherPattern,
   DITHER_SUBPIXEL,
   DITHER_TILE_SIZE,
 } from '../shared/ditherTiles';
