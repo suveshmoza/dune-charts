@@ -154,9 +154,11 @@ function findYAxisDataKey(children: ReactNode): string | null {
     if (!isValidElement(child)) return;
     const props = child.props as Record<string, unknown>;
     const meta = readPartMetaFromType(child.type, props);
-    if (meta?.part === 'y-axis' && typeof props.dataKey === 'string') {
-      found = props.dataKey;
-    }
+    if (meta?.part !== 'y-axis') return;
+    const fromMeta = 'dataKey' in meta ? meta.dataKey : undefined;
+    const fromProps = typeof props.dataKey === 'string' ? props.dataKey : undefined;
+    const key = fromMeta ?? fromProps;
+    if (key != null && key !== '') found = key;
   });
   return found;
 }
@@ -476,14 +478,8 @@ function DuneBarChartLegacy<T extends Record<string, unknown>>(props: DuneBarCha
       <DuneCartesianGrid />
       {isHorizontalBars ? (
         <>
-          <DuneXAxis dataKey={index} type="number" domain={[0, 'auto']} dy={0} {...xAxisProps} />
-          <DuneYAxis
-            type="category"
-            dataKey={index}
-            width={72}
-            domain={undefined}
-            {...yAxisProps}
-          />
+          <DuneXAxis type="number" domain={[0, 'auto']} dy={0} {...xAxisProps} />
+          <DuneYAxis type="category" dataKey={index} {...yAxisProps} />
         </>
       ) : (
         <>

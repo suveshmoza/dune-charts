@@ -68,7 +68,7 @@ export function useChartComposition(): ChartCompositionValue {
 export type DunePartMeta =
   | { part: 'grid' }
   | { part: 'x-axis'; dataKey?: string }
-  | { part: 'y-axis' }
+  | { part: 'y-axis'; dataKey?: string }
   | { part: 'tooltip' }
   | { part: 'legend' }
   | { part: 'polar-grid' }

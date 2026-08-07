@@ -53,24 +53,38 @@ export const DuneCartesianGrid = markDunePart(
   { part: 'grid' },
 );
 
-export type DuneXAxisProps = Omit<XAxisProps<unknown, unknown>, 'dataKey'> & {
-  dataKey: string;
-};
+export type DuneXAxisProps = XAxisProps<unknown, unknown>;
 
 export const DuneXAxis = markDunePart(
-  function DuneXAxis({ dataKey, ...props }: DuneXAxisProps) {
-    return <XAxis dataKey={dataKey} {...X_AXIS_DEFAULTS} {...props} />;
+  function DuneXAxis(props: DuneXAxisProps) {
+    return <XAxis {...X_AXIS_DEFAULTS} {...props} />;
   },
-  (props) => ({ part: 'x-axis', dataKey: props.dataKey }),
+  (props) => ({
+    part: 'x-axis',
+    dataKey: typeof props.dataKey === 'string' ? props.dataKey : undefined,
+  }),
 );
 
 export type DuneYAxisProps = YAxisProps<unknown, unknown>;
 
 export const DuneYAxis = markDunePart(
-  function DuneYAxis(props: DuneYAxisProps) {
-    return <YAxis {...Y_AXIS_DEFAULTS} {...props} />;
+  function DuneYAxis({ type, domain, width, ...props }: DuneYAxisProps) {
+    const category = type === 'category';
+    return (
+      <YAxis
+        {...Y_AXIS_DEFAULTS}
+        type={type}
+        // Numeric domain defaults break categorical Y (horizontal bars).
+        domain={domain ?? (category ? undefined : Y_AXIS_DEFAULTS.domain)}
+        width={width ?? (category ? 72 : Y_AXIS_DEFAULTS.width)}
+        {...props}
+      />
+    );
   },
-  { part: 'y-axis' },
+  (props) => ({
+    part: 'y-axis',
+    dataKey: typeof props.dataKey === 'string' ? props.dataKey : undefined,
+  }),
 );
 
 export type DuneTooltipProps = Omit<TooltipProps, 'content'> & {

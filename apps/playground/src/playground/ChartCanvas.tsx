@@ -122,7 +122,7 @@ export function ChartCanvas({
             <DuneBarChart.Grid />
             <DuneBarChart.XAxis dataKey="month" />
             <DuneBarChart.YAxis />
-            <DuneBarChart.Tooltip />
+            <DuneBarChart.Tooltip cursor={false} />
             <DuneBarChart.Legend />
             {THROUGHPUT_KEYS.map((key) => (
               <DuneBarChart.Bar key={key} dataKey={key} stackId="ops" />
@@ -145,9 +145,9 @@ export function ChartCanvas({
             valueFormatter={(value) => String(value)}
           >
             <DuneBarChart.Grid />
-            <DuneBarChart.XAxis dataKey="month" />
-            <DuneBarChart.YAxis />
-            <DuneBarChart.Tooltip />
+            <DuneBarChart.XAxis type="number" domain={[0, 'auto']} dy={0} />
+            <DuneBarChart.YAxis type="category" dataKey="month" />
+            <DuneBarChart.Tooltip cursor={false} />
             <DuneBarChart.Legend />
             <DuneBarChart.Bar dataKey="melange" />
           </DuneBarChart>
@@ -168,7 +168,7 @@ export function ChartCanvas({
           <DuneBarChart.Grid />
           <DuneBarChart.XAxis dataKey="month" />
           <DuneBarChart.YAxis />
-          <DuneBarChart.Tooltip />
+          <DuneBarChart.Tooltip cursor={false} />
           <DuneBarChart.Legend />
           <DuneBarChart.Bar dataKey="melange" />
         </DuneBarChart>
@@ -239,7 +239,7 @@ export function ChartCanvas({
           <DuneRadarChart.PolarGrid />
           <DuneRadarChart.PolarAngleAxis dataKey="axis" />
           <DuneRadarChart.PolarRadiusAxis />
-          <DuneRadarChart.Tooltip />
+          <DuneRadarChart.Tooltip cursor={false} />
           <DuneRadarChart.Legend />
           <DuneRadarChart.Radar dataKey="melange" />
           <DuneRadarChart.Radar dataKey="water" />
@@ -261,7 +261,7 @@ export function ChartCanvas({
           chartProps={variant === 'semi' ? { startAngle: 180, endAngle: 0, cy: '70%' } : undefined}
           valueFormatter={(value) => String(value)}
         >
-          <DuneRadialChart.Tooltip />
+          <DuneRadialChart.Tooltip cursor={false} />
           <DuneRadialChart.Legend />
           <DuneRadialChart.RadialBar dataKey="value" nameKey="name" />
         </DuneRadialChart>

@@ -10,6 +10,14 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Recharts accessibilityLayer focuses the SVG on click; kill the ring. */
+.dune-chart-container:focus,
+.dune-chart-container:focus-visible,
+.dune-chart-container :focus,
+.dune-chart-container :focus-visible {
+  outline: none;
+}
+
 .dune-sr-only {
   position: absolute;
   width: 1px;
