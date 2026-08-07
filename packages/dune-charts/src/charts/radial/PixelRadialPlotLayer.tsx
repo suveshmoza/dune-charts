@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { usePlotArea } from 'recharts';
 
+import { playRafEntrance } from '../shared/chartMotion';
 import {
   fillShimmerMask,
   SHIMMER_MS,
@@ -40,7 +41,70 @@ export type PixelRadialPlotLayerProps = {
   shimmer?: boolean;
   /** When `true`, paint unfilled gray track remainders. Default `false`. */
   paintTracks?: boolean;
+  /**
+   * One-shot angular sweep reveal (mount only).
+   * Ignored while `shimmer` is active. Default `true`.
+   */
+  animate?: boolean;
 };
+
+function degToRad(deg: number): number {
+  return (deg * Math.PI) / 180;
+}
+
+function blitFull(
+  ctx: CanvasRenderingContext2D,
+  bake: HTMLCanvasElement,
+  dpr: number,
+  cssW: number,
+  cssH: number,
+): void {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.clearRect(0, 0, cssW, cssH);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(bake, 0, 0);
+}
+
+/** Same CCW angle convention as pie entrance. */
+function blitAngularSweep(
+  ctx: CanvasRenderingContext2D,
+  bake: HTMLCanvasElement,
+  dpr: number,
+  cssW: number,
+  cssH: number,
+  lcx: number,
+  lcy: number,
+  radius: number,
+  startAngleDeg: number,
+  sweepDeg: number,
+): void {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.clearRect(0, 0, cssW, cssH);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(bake, 0, 0);
+
+  if (sweepDeg <= 0) {
+    ctx.clearRect(0, 0, cssW, cssH);
+    return;
+  }
+
+  ctx.globalCompositeOperation = 'destination-in';
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  if (Math.abs(sweepDeg) >= 360 - 1e-3) {
+    ctx.arc(lcx, lcy, radius, 0, Math.PI * 2);
+  } else {
+    const start = degToRad(-startAngleDeg);
+    const end = degToRad(-(startAngleDeg + sweepDeg));
+    ctx.moveTo(lcx, lcy);
+    ctx.arc(lcx, lcy, radius, start, end, true);
+    ctx.closePath();
+  }
+  ctx.fill();
+  ctx.globalCompositeOperation = 'source-over';
+}
 
 /**
  * Draws chunky pixel radial-bar arcs inside the Recharts plot area via Canvas2D.
@@ -58,11 +122,13 @@ export function PixelRadialPlotLayer({
   layoutOptions,
   shimmer = false,
   paintTracks = false,
+  animate = true,
 }: PixelRadialPlotLayerProps) {
   const plot = usePlotArea();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ditherTilesRef = useRef<DitherTileCache>(new Map());
   const bakeRef = useRef<HTMLCanvasElement | null>(null);
+  const entranceDoneRef = useRef(false);
 
   const layout = useMemo(() => {
     if (plot == null) return null;
@@ -84,11 +150,13 @@ export function PixelRadialPlotLayer({
     return null;
   }, [plot, hits, bars, pixel, trackStartAngle, trackEndAngle, layoutOptions]);
 
+  const totalSweep = trackEndAngle - trackStartAngle;
+
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (canvas == null || layout == null) return;
 
-    const { plotW, plotH } = layout;
+    const { plotW, plotH, plotX, plotY, cx, cy, outerRadius } = layout;
     const dpr = typeof window !== 'undefined' ? Math.max(1, window.devicePixelRatio || 1) : 1;
     const cssW = Math.max(1, plotW);
     const cssH = Math.max(1, plotH);
@@ -120,29 +188,80 @@ export function PixelRadialPlotLayer({
       ditherTiles: ditherTilesRef.current,
     });
 
-    if (!shimmer) {
-      const ctx = canvas.getContext('2d');
-      if (ctx == null) return;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, cssW, cssH);
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(bake, 0, 0);
+    if (shimmer) return;
+
+    const ctx = canvas.getContext('2d');
+    if (ctx == null) return;
+
+    if (!animate) {
+      blitFull(ctx, bake, dpr, cssW, cssH);
+      entranceDoneRef.current = true;
+      return;
     }
-  }, [layout, bars, fill, trackColor, paintTracks, shimmer]);
+    if (entranceDoneRef.current) {
+      blitFull(ctx, bake, dpr, cssW, cssH);
+      return;
+    }
+
+    const lcx = cx - plotX;
+    const lcy = cy - plotY;
+    const maskR = outerRadius + pixel * 2;
+    const sweepSpan = Number.isFinite(totalSweep) && Math.abs(totalSweep) > 0 ? totalSweep : 360;
+
+    const handle = playRafEntrance(
+      (eased) => {
+        const liveBake = bakeRef.current;
+        if (liveBake == null) return;
+        if (eased >= 1) {
+          blitFull(ctx, liveBake, dpr, cssW, cssH);
+          return;
+        }
+        blitAngularSweep(
+          ctx,
+          liveBake,
+          dpr,
+          cssW,
+          cssH,
+          lcx,
+          lcy,
+          maskR,
+          trackStartAngle,
+          sweepSpan * eased,
+        );
+      },
+      () => {
+        entranceDoneRef.current = true;
+      },
+    );
+    return () => {
+      handle.cancel();
+    };
+  }, [
+    layout,
+    bars,
+    fill,
+    trackColor,
+    paintTracks,
+    shimmer,
+    animate,
+    trackStartAngle,
+    totalSweep,
+    pixel,
+  ]);
 
   const plotSizeKey = layout == null ? '' : `${layout.plotW}x${layout.plotH}`;
   useLayoutEffect(() => {
-    if (!shimmer) return undefined;
+    if (!shimmer) return;
     const canvas = canvasRef.current;
     const bake = bakeRef.current;
-    if (canvas == null || bake == null || layout == null) return undefined;
+    if (canvas == null || bake == null || layout == null) return;
 
     const { plotW, plotH } = layout;
     const dpr = typeof window !== 'undefined' ? Math.max(1, window.devicePixelRatio || 1) : 1;
     const cssW = Math.max(1, plotW);
     const cssH = Math.max(1, plotH);
     const ctx = canvas.getContext('2d');
-    if (ctx == null) return undefined;
+    if (ctx == null) return;
 
     let raf = 0;
     const start = performance.now();

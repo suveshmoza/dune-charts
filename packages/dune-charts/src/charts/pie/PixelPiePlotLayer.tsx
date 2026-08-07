@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { usePlotArea } from 'recharts';
 
-import { DUNE_DURATION } from '../shared/chartShell';
+import { playRafEntrance } from '../shared/chartMotion';
 import {
   fillShimmerMask,
   SHIMMER_MS,
@@ -28,16 +28,11 @@ export type PixelPiePlotLayerProps = {
    */
   shimmer?: boolean;
   /**
-   * One-shot angular sweep reveal from `startAngle`.
+   * One-shot angular sweep reveal from `startAngle` (mount only).
    * Ignored while `shimmer` is active. Default `true`.
    */
   animate?: boolean;
 };
-
-function easeOutCubic(t: number): number {
-  const u = 1 - t;
-  return 1 - u * u * u;
-}
 
 function degToRad(deg: number): number {
   return (deg * Math.PI) / 180;
@@ -117,6 +112,7 @@ export function PixelPiePlotLayer({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ditherTilesRef = useRef<DitherTileCache>(new Map());
   const bakeRef = useRef<HTMLCanvasElement | null>(null);
+  const entranceDoneRef = useRef(false);
 
   const layout = useMemo(() => {
     if (plot == null) return null;
@@ -171,6 +167,11 @@ export function PixelPiePlotLayer({
 
     if (!animate) {
       blitFull(ctx, bake, dpr, cssW, cssH);
+      entranceDoneRef.current = true;
+      return;
+    }
+    if (entranceDoneRef.current) {
+      blitFull(ctx, bake, dpr, cssW, cssH);
       return;
     }
 
@@ -179,28 +180,33 @@ export function PixelPiePlotLayer({
     const maskR = outerRadius + pixel * 2;
     const sweepSpan = Number.isFinite(totalSweep) && Math.abs(totalSweep) > 0 ? totalSweep : 360;
 
-    let raf = 0;
-    const start = performance.now();
-
-    const tick = (now: number) => {
-      const liveBake = bakeRef.current;
-      if (liveBake == null) return;
-
-      const t = Math.min(1, (now - start) / DUNE_DURATION);
-      const sweep = sweepSpan * easeOutCubic(t);
-      blitAngularSweep(ctx, liveBake, dpr, cssW, cssH, lcx, lcy, maskR, startAngle, sweep);
-
-      if (t < 1) {
-        raf = requestAnimationFrame(tick);
-      } else {
-        blitFull(ctx, liveBake, dpr, cssW, cssH);
-      }
-    };
-
-    raf = requestAnimationFrame(tick);
-    // oxlint-disable-next-line typescript/consistent-return
+    const handle = playRafEntrance(
+      (eased) => {
+        const liveBake = bakeRef.current;
+        if (liveBake == null) return;
+        if (eased >= 1) {
+          blitFull(ctx, liveBake, dpr, cssW, cssH);
+          return;
+        }
+        blitAngularSweep(
+          ctx,
+          liveBake,
+          dpr,
+          cssW,
+          cssH,
+          lcx,
+          lcy,
+          maskR,
+          startAngle,
+          sweepSpan * eased,
+        );
+      },
+      () => {
+        entranceDoneRef.current = true;
+      },
+    );
     return () => {
-      cancelAnimationFrame(raf);
+      handle.cancel();
     };
   }, [layout, slices, fill, shimmer, animate, startAngle, totalSweep, pixel]);
 
@@ -243,11 +249,10 @@ export function PixelPiePlotLayer({
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    // oxlint-disable-next-line typescript/consistent-return
     return () => {
       cancelAnimationFrame(raf);
     };
-  }, [shimmer, plotSizeKey, layout, layout?.plotW, layout?.plotH]);
+  }, [shimmer, plotSizeKey, layout]);
 
   if (layout == null || plot == null) return null;
 

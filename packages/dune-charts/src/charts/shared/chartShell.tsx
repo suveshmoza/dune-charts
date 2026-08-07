@@ -3,9 +3,8 @@ import type { CSSProperties, ReactNode } from 'react';
 import { clampPixel, toCssSize } from './composition';
 
 export { clampPixel, toCssSize };
+export { DUNE_DURATION, DUNE_EASE, easeOutCubic } from './chartMotion';
 
-export const DUNE_EASE = 'ease-out';
-export const DUNE_DURATION = 520;
 export const DEFAULT_PIXEL = 2;
 export const DEFAULT_EMPTY_MESSAGE = 'No data to display';
 

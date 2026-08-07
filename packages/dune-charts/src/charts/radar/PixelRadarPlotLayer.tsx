@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { usePlotArea } from 'recharts';
 
-import { DUNE_DURATION } from '../shared/chartShell';
+import { playRafEntrance } from '../shared/chartMotion';
 import {
   fillShimmerMask,
   SHIMMER_MS,
@@ -25,16 +25,11 @@ export type PixelRadarPlotLayerProps = {
    */
   shimmer?: boolean;
   /**
-   * One-shot radial grow from center.
+   * One-shot radial grow from center (mount only).
    * Ignored while `shimmer` is active. Default `true`.
    */
   animate?: boolean;
 };
-
-function easeOutCubic(t: number): number {
-  const u = 1 - t;
-  return 1 - u * u * u;
-}
 
 function blitFull(
   ctx: CanvasRenderingContext2D,
@@ -96,6 +91,7 @@ export function PixelRadarPlotLayer({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ditherTilesRef = useRef<DitherTileCache>(new Map());
   const bakeRef = useRef<HTMLCanvasElement | null>(null);
+  const entranceDoneRef = useRef(false);
 
   const layout = useMemo(() => {
     if (plot == null) return null;
@@ -143,6 +139,11 @@ export function PixelRadarPlotLayer({
 
     if (!animate) {
       blitFull(ctx, bake, dpr, cssW, cssH);
+      entranceDoneRef.current = true;
+      return;
+    }
+    if (entranceDoneRef.current) {
+      blitFull(ctx, bake, dpr, cssW, cssH);
       return;
     }
 
@@ -150,43 +151,38 @@ export function PixelRadarPlotLayer({
     const lcy = cy - plotY;
     const maxR = outerRadius + pixel * 2;
 
-    let raf = 0;
-    const start = performance.now();
-
-    const tick = (now: number) => {
-      const liveBake = bakeRef.current;
-      if (liveBake == null) return;
-
-      const t = Math.min(1, (now - start) / DUNE_DURATION);
-      blitRadialGrow(ctx, liveBake, dpr, cssW, cssH, lcx, lcy, maxR * easeOutCubic(t));
-
-      if (t < 1) {
-        raf = requestAnimationFrame(tick);
-      } else {
-        blitFull(ctx, liveBake, dpr, cssW, cssH);
-      }
-    };
-
-    raf = requestAnimationFrame(tick);
-    // oxlint-disable-next-line typescript/consistent-return
+    const handle = playRafEntrance(
+      (eased) => {
+        const liveBake = bakeRef.current;
+        if (liveBake == null) return;
+        if (eased >= 1) {
+          blitFull(ctx, liveBake, dpr, cssW, cssH);
+          return;
+        }
+        blitRadialGrow(ctx, liveBake, dpr, cssW, cssH, lcx, lcy, maxR * eased);
+      },
+      () => {
+        entranceDoneRef.current = true;
+      },
+    );
     return () => {
-      cancelAnimationFrame(raf);
+      handle.cancel();
     };
   }, [layout, series, fill, shimmer, animate, pixel]);
 
   const plotSizeKey = layout == null ? '' : `${layout.plotW}x${layout.plotH}`;
   useLayoutEffect(() => {
-    if (!shimmer) return undefined;
+    if (!shimmer) return;
     const canvas = canvasRef.current;
     const bake = bakeRef.current;
-    if (canvas == null || bake == null || layout == null) return undefined;
+    if (canvas == null || bake == null || layout == null) return;
 
     const { plotW, plotH } = layout;
     const dpr = typeof window !== 'undefined' ? Math.max(1, window.devicePixelRatio || 1) : 1;
     const cssW = Math.max(1, plotW);
     const cssH = Math.max(1, plotH);
     const ctx = canvas.getContext('2d');
-    if (ctx == null) return undefined;
+    if (ctx == null) return;
 
     let raf = 0;
     const start = performance.now();

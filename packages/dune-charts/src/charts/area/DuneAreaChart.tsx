@@ -97,7 +97,6 @@ const Area = markDunePart(
     legendType = 'square',
     ...rest
   }: DuneAreaChartAreaProps) {
-    const prefersReducedMotion = usePrefersReducedMotion();
     return (
       <RechartsArea
         type={type}
@@ -114,7 +113,7 @@ const Area = markDunePart(
         activeDot={{ r: 4, strokeWidth: 0 }}
         animationDuration={DUNE_DURATION}
         animationEasing={DUNE_EASE}
-        isAnimationActive={!prefersReducedMotion}
+        isAnimationActive={false}
         legendType={legendType}
         {...rest}
       />
@@ -353,7 +352,7 @@ function DuneAreaChartRoot<T extends Record<string, unknown>>({
             />
           ) : null}
 
-          {rewriteAreaSeriesChildren(children, categories, mergedConfig, prefersReducedMotion)}
+          {rewriteAreaSeriesChildren(children, categories, mergedConfig)}
         </AreaChart>
       </DuneChartContainer>
     </ChartCompositionProvider>
@@ -364,7 +363,6 @@ function rewriteAreaSeriesChildren(
   children: ReactNode,
   categories: readonly string[],
   config: Partial<Record<string, DuneSeriesConfig>>,
-  prefersReducedMotion: boolean,
 ): ReactNode {
   return Children.map(children, (child) => {
     if (!isValidElement(child)) return child;
@@ -378,7 +376,7 @@ function rewriteAreaSeriesChildren(
         name: config[dataKey]?.label ?? dataKey,
         stroke: color,
         activeDot: { r: 4, strokeWidth: 0, fill: color },
-        isAnimationActive: !prefersReducedMotion,
+        isAnimationActive: false,
       });
     }
     return child;

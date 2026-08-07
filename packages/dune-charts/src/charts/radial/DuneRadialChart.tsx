@@ -168,7 +168,6 @@ const RadialBar = markDunePart(
     ...rest
   }: DuneRadialChartRadialBarProps) {
     const { categories: barNames } = useChartComposition();
-    const prefersReducedMotion = usePrefersReducedMotion();
 
     return (
       <RechartsRadialBar
@@ -176,7 +175,7 @@ const RadialBar = markDunePart(
         {...rest}
         background={false}
         stroke="none"
-        isAnimationActive={isAnimationActive ?? !prefersReducedMotion}
+        isAnimationActive={isAnimationActive ?? false}
         animationDuration={animationDuration ?? DUNE_DURATION}
         animationEasing={animationEasing ?? DUNE_EASE}
         activeShape={false}
@@ -471,6 +470,7 @@ function DuneRadialChartRoot<T extends Record<string, unknown>>({
               fill={effectiveFill}
               trackStartAngle={chartStartAngle}
               trackEndAngle={chartEndAngle}
+              animate={!prefersReducedMotion}
             />
           ) : null}
 
@@ -483,7 +483,7 @@ function DuneRadialChartRoot<T extends Record<string, unknown>>({
             {...polarAngleAxisProps}
           />
 
-          {rewriteRadialBarChildren(children, renderHitShape, prefersReducedMotion)}
+          {rewriteRadialBarChildren(children, renderHitShape)}
         </RadialBarChart>
       </DuneChartContainer>
     </ChartCompositionProvider>
@@ -493,7 +493,6 @@ function DuneRadialChartRoot<T extends Record<string, unknown>>({
 function rewriteRadialBarChildren(
   children: ReactNode,
   renderHitShape: (props: SectorProps) => ReactElement,
-  prefersReducedMotion: boolean,
 ): ReactNode {
   return Children.map(children, (child) => {
     if (!isValidElement(child)) return child;
@@ -502,7 +501,7 @@ function rewriteRadialBarChildren(
     if (resolved?.part === 'radial-bar') {
       return cloneElement(child as ReactElement<Record<string, unknown>>, {
         shape: renderHitShape,
-        isAnimationActive: !prefersReducedMotion,
+        isAnimationActive: false,
       });
     }
     return child;

@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { usePlotArea, useXAxisScale, useYAxisScale } from 'recharts';
 
-import { DUNE_DURATION } from '../shared/chartShell';
+import { playRafEntrance } from '../shared/chartMotion';
 import {
   fillShimmerMask,
   SHIMMER_MS,
@@ -30,16 +30,11 @@ export type PixelWavePlotLayerProps = {
    */
   shimmer?: boolean;
   /**
-   * One-shot left→right wipe reveal of the baked pixels.
+   * One-shot left→right wipe reveal of the baked pixels (plays until complete).
    * Ignored while `shimmer` is active. Default `true`.
    */
   animate?: boolean;
 };
-
-function easeOutCubic(t: number): number {
-  const u = 1 - t;
-  return 1 - u * u * u;
-}
 
 function blitFull(
   ctx: CanvasRenderingContext2D,
@@ -93,6 +88,7 @@ export function PixelWavePlotLayer({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ditherTilesRef = useRef<DitherTileCache>(new Map());
   const bakeRef = useRef<HTMLCanvasElement | null>(null);
+  const entranceDoneRef = useRef(false);
 
   const layout = useMemo(() => {
     if (plot == null || yScale == null) return null;
@@ -109,7 +105,6 @@ export function PixelWavePlotLayer({
     });
   }, [plot, yScale, xScale, series, pointCount, pixel, indexValues]);
 
-  // Bake whenever geometry / series change. Entrance wipe or static blit follows.
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (canvas == null || layout == null) return;
@@ -144,7 +139,6 @@ export function PixelWavePlotLayer({
       ditherTiles: ditherTilesRef.current,
     });
 
-    // Loading shimmer owns the display loop.
     if (shimmer) return;
 
     const ctx = canvas.getContext('2d');
@@ -152,48 +146,46 @@ export function PixelWavePlotLayer({
 
     if (!animate) {
       blitFull(ctx, bake, dpr, cssW, cssH);
+      entranceDoneRef.current = true;
+      return;
+    }
+    if (entranceDoneRef.current) {
+      blitFull(ctx, bake, dpr, cssW, cssH);
       return;
     }
 
-    let raf = 0;
-    const start = performance.now();
-
-    const tick = (now: number) => {
-      const liveBake = bakeRef.current;
-      if (liveBake == null) return;
-
-      const t = Math.min(1, (now - start) / DUNE_DURATION);
-      const revealW = cssW * easeOutCubic(t);
-      blitWipe(ctx, liveBake, dpr, cssW, cssH, revealW);
-
-      if (t < 1) {
-        raf = requestAnimationFrame(tick);
-      } else {
-        blitFull(ctx, liveBake, dpr, cssW, cssH);
-      }
-    };
-
-    raf = requestAnimationFrame(tick);
-    // oxlint-disable-next-line typescript/consistent-return
+    const handle = playRafEntrance(
+      (eased) => {
+        const liveBake = bakeRef.current;
+        if (liveBake == null) return;
+        if (eased >= 1) {
+          blitFull(ctx, liveBake, dpr, cssW, cssH);
+          return;
+        }
+        blitWipe(ctx, liveBake, dpr, cssW, cssH, cssW * eased);
+      },
+      () => {
+        entranceDoneRef.current = true;
+      },
+    );
     return () => {
-      cancelAnimationFrame(raf);
+      handle.cancel();
     };
   }, [layout, series, fill, shimmer, animate]);
 
-  // Shimmer loop — size-stable; re-bake above updates pixels mid-sweep.
   const plotSizeKey = layout == null ? '' : `${layout.plotW}x${layout.plotH}`;
   useLayoutEffect(() => {
-    if (!shimmer) return undefined;
+    if (!shimmer) return;
     const canvas = canvasRef.current;
     const bake = bakeRef.current;
-    if (canvas == null || bake == null || layout == null) return undefined;
+    if (canvas == null || bake == null || layout == null) return;
 
     const { plotW, plotH } = layout;
     const dpr = typeof window !== 'undefined' ? Math.max(1, window.devicePixelRatio || 1) : 1;
     const cssW = Math.max(1, plotW);
     const cssH = Math.max(1, plotH);
     const ctx = canvas.getContext('2d');
-    if (ctx == null) return undefined;
+    if (ctx == null) return;
 
     let raf = 0;
     const start = performance.now();
@@ -223,8 +215,7 @@ export function PixelWavePlotLayer({
     return () => {
       cancelAnimationFrame(raf);
     };
-    // Only restart when shimmer toggles or plot size changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- layout read for size; keyed via plotSizeKey
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- size keyed via plotSizeKey
   }, [shimmer, plotSizeKey]);
 
   if (layout == null || plot == null) return null;

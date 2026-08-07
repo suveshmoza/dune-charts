@@ -80,7 +80,6 @@ const Pie = markDunePart(
     ...rest
   }: DunePieChartPieProps) {
     const { data, categories: sliceNames } = useChartComposition();
-    const prefersReducedMotion = usePrefersReducedMotion();
     const nameKey = nameKeyProp ?? 'name';
 
     return (
@@ -90,7 +89,7 @@ const Pie = markDunePart(
         nameKey={nameKey}
         {...rest}
         stroke="none"
-        isAnimationActive={isAnimationActive ?? !prefersReducedMotion}
+        isAnimationActive={isAnimationActive ?? false}
         animationDuration={animationDuration ?? DUNE_DURATION}
         animationEasing={animationEasing ?? DUNE_EASE}
         activeShape={false}

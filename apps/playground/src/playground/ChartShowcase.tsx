@@ -34,7 +34,7 @@ const SHOWCASE_ITEMS: ShowcaseItem[] = CHARTS.flatMap((chart) =>
 );
 
 /** How long every chart stays in the loading skeleton before the stagger queue starts. */
-const LOADING_VISIBLE_MS = 1400;
+const LOADING_VISIBLE_MS = 900;
 /** Extra delay between consecutive chart reveals (keeps mounts spread out). */
 const STAGGER_STEP_MS = 120;
 

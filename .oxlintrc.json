@@ -16,7 +16,8 @@
       "warn",
       { "allowConstantExport": true, "allowExportNames": ["useDuneTheme"] }
     ],
-    "import/no-unassigned-import": ["warn", { "allow": ["**/*.css"] }]
+    "import/no-unassigned-import": ["warn", { "allow": ["**/*.css"] }],
+    "typescript/consistent-return": "off"
   },
   "ignorePatterns": ["**/dist/**", "**/node_modules/**"],
   "overrides": [
@@ -25,6 +26,12 @@
       "rules": {
         "react/only-export-components": "off",
         "typescript/no-unsafe-type-assertion": "off"
+      }
+    },
+    {
+      "files": ["apps/playground/**/*.{ts,tsx}"],
+      "rules": {
+        "react/only-export-components": "off"
       }
     }
   ]

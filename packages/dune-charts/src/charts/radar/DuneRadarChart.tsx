@@ -93,7 +93,6 @@ const Radar = markDunePart(
     legendType = 'square',
     ...rest
   }: DuneRadarChartRadarProps) {
-    const prefersReducedMotion = usePrefersReducedMotion();
     return (
       <RechartsRadar
         dataKey={dataKey}
@@ -106,7 +105,7 @@ const Radar = markDunePart(
         activeDot={activeDot}
         animationDuration={DUNE_DURATION}
         animationEasing={DUNE_EASE}
-        isAnimationActive={!prefersReducedMotion}
+        isAnimationActive={false}
         legendType={legendType}
         {...rest}
       />
@@ -329,7 +328,7 @@ function DuneRadarChartRoot<T extends Record<string, unknown>>({
             />
           ) : null}
 
-          {rewriteRadarSeriesChildren(children, categories, mergedConfig, prefersReducedMotion)}
+          {rewriteRadarSeriesChildren(children, categories, mergedConfig)}
         </RadarChart>
       </DuneChartContainer>
     </ChartCompositionProvider>
@@ -340,7 +339,6 @@ function rewriteRadarSeriesChildren(
   children: ReactNode,
   categories: readonly string[],
   config: Partial<Record<string, DuneSeriesConfig>>,
-  prefersReducedMotion: boolean,
 ): ReactNode {
   return Children.map(children, (child) => {
     if (!isValidElement(child)) return child;
@@ -356,7 +354,7 @@ function rewriteRadarSeriesChildren(
         fill: color,
         strokeOpacity: 0,
         fillOpacity: 0,
-        isAnimationActive: !prefersReducedMotion,
+        isAnimationActive: false,
       });
     }
     return child;

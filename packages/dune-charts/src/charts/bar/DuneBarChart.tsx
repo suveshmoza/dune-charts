@@ -98,7 +98,6 @@ const Bar = markDunePart(
     activeBar = false,
     ...rest
   }: DuneBarChartBarProps) {
-    const prefersReducedMotion = usePrefersReducedMotion();
     return (
       <RechartsBar
         dataKey={dataKey}
@@ -110,7 +109,7 @@ const Bar = markDunePart(
         maxBarSize={maxBarSize}
         animationDuration={DUNE_DURATION}
         animationEasing={DUNE_EASE}
-        isAnimationActive={!prefersReducedMotion}
+        isAnimationActive={false}
         legendType={legendType}
         activeBar={activeBar}
         {...rest}
@@ -391,7 +390,7 @@ function DuneBarChartRoot<T extends Record<string, unknown>>({
             />
           ) : null}
 
-          {rewriteBarSeriesChildren(children, categories, mergedConfig, prefersReducedMotion)}
+          {rewriteBarSeriesChildren(children, categories, mergedConfig)}
         </BarChart>
       </DuneChartContainer>
     </ChartCompositionProvider>
@@ -402,7 +401,6 @@ function rewriteBarSeriesChildren(
   children: ReactNode,
   categories: readonly string[],
   config: Partial<Record<string, DuneSeriesConfig>>,
-  prefersReducedMotion: boolean,
 ): ReactNode {
   return Children.map(children, (child) => {
     if (!isValidElement(child)) return child;
@@ -416,7 +414,7 @@ function rewriteBarSeriesChildren(
         name: config[dataKey]?.label ?? dataKey,
         fill: color,
         fillOpacity: 0,
-        isAnimationActive: !prefersReducedMotion,
+        isAnimationActive: false,
       });
     }
     return child;

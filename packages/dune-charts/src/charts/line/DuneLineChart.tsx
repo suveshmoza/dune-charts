@@ -94,7 +94,6 @@ const Line = markDunePart(
     legendType = 'square',
     ...rest
   }: DuneLineChartLineProps) {
-    const prefersReducedMotion = usePrefersReducedMotion();
     return (
       <RechartsLine
         type={type}
@@ -107,7 +106,7 @@ const Line = markDunePart(
         activeDot={activeDot}
         animationDuration={DUNE_DURATION}
         animationEasing={DUNE_EASE}
-        isAnimationActive={!prefersReducedMotion}
+        isAnimationActive={false}
         legendType={legendType}
         {...rest}
       />
@@ -337,7 +336,7 @@ function DuneLineChartRoot<T extends Record<string, unknown>>({
             />
           ) : null}
 
-          {rewriteLineSeriesChildren(children, categories, mergedConfig, prefersReducedMotion)}
+          {rewriteLineSeriesChildren(children, categories, mergedConfig)}
         </LineChart>
       </DuneChartContainer>
     </ChartCompositionProvider>
@@ -348,7 +347,6 @@ function rewriteLineSeriesChildren(
   children: ReactNode,
   categories: readonly string[],
   config: Partial<Record<string, DuneSeriesConfig>>,
-  prefersReducedMotion: boolean,
 ): ReactNode {
   return Children.map(children, (child) => {
     if (!isValidElement(child)) return child;
@@ -362,7 +360,7 @@ function rewriteLineSeriesChildren(
         name: config[dataKey]?.label ?? dataKey,
         stroke: color,
         strokeOpacity: 0,
-        isAnimationActive: !prefersReducedMotion,
+        isAnimationActive: false,
       });
     }
     return child;
