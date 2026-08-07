@@ -23,10 +23,10 @@ export type PixelRadialPlotLayerProps = {
   hits?: readonly PixelRadialHitSector[];
   pixel?: number;
   fill?: PixelWaveFill;
-  /** Full ring domain for gray remainders (chart start/end angles). */
+  /** Full ring domain (chart start/end angles) used for layout / optional tracks. */
   trackStartAngle?: number;
   trackEndAngle?: number;
-  /** Resolved concrete color for unfilled track remainder. */
+  /** Resolved concrete color for unfilled track remainder when `paintTracks`. */
   trackColor?: string;
   /**
    * Independent layout when hit geometry is unavailable (loading skeletons).
@@ -38,7 +38,7 @@ export type PixelRadialPlotLayerProps = {
    * Same soft beam as area/bar/pie/radar loading.
    */
   shimmer?: boolean;
-  /** When `false`, omit unfilled track remainders (loading skeletons). */
+  /** When `true`, paint unfilled gray track remainders. Default `false`. */
   paintTracks?: boolean;
 };
 
@@ -57,7 +57,7 @@ export function PixelRadialPlotLayer({
   trackColor,
   layoutOptions,
   shimmer = false,
-  paintTracks = true,
+  paintTracks = false,
 }: PixelRadialPlotLayerProps) {
   const plot = usePlotArea();
   const canvasRef = useRef<HTMLCanvasElement>(null);

@@ -466,7 +466,6 @@ function DuneRadialChartRoot<T extends Record<string, unknown>>({
               fill={effectiveFill}
               trackStartAngle={chartStartAngle}
               trackEndAngle={chartEndAngle}
-              trackColor={trackColor}
             />
           ) : null}
 

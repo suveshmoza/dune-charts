@@ -20,7 +20,7 @@ export type PaintPixelRadialOptions = {
   fill?: PixelWaveFill;
   /** Unfilled ring remainder (resolved concrete color). */
   trackColor?: string;
-  /** When `false`, skip unfilled track remainder cells (loading skeletons). */
+  /** When `true`, paint unfilled track remainder cells. Default `false`. */
   paintTracks?: boolean;
   ditherTiles?: DitherTileCache;
 };
@@ -127,7 +127,7 @@ function barsAsSeries(bars: readonly PixelRadialBar[]): PixelWaveSeries[] {
 /**
  * Paint pixel radial-bar cells into a plot-local canvas context.
  * Cell coords are chart-absolute; this subtracts plot origin.
- * Value and track cells share the same bands / dither fill path.
+ * Track remainder cells are skipped unless `paintTracks` is set.
  */
 export function paintPixelRadial(
   ctx: CanvasRenderingContext2D,
@@ -138,7 +138,7 @@ export function paintPixelRadial(
     bars,
     fill = 'bands',
     trackColor = DEFAULT_TRACK_COLOR,
-    paintTracks = true,
+    paintTracks = false,
   } = options;
   const { pixel, plotX, plotY, plotW, plotH, cells } = layout;
 
