@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { usePlotArea, useXAxisScale, useYAxisScale } from 'recharts';
 
+import { DUNE_DURATION } from '../shared/chartShell';
 import {
   fillShimmerMask,
   SHIMMER_MS,
@@ -22,9 +23,76 @@ export type PixelBarPlotLayerProps = {
   /**
    * Traveling opacity mask over baked dither bars (loading skeleton).
    * Same beam as area loading — soft peak, no flat skirts.
+   * When true, entrance wipe is skipped.
    */
   shimmer?: boolean;
+  /**
+   * One-shot entrance reveal of baked pixels.
+   * Vertical bars grow up from the baseline; horizontal bars grow right from the origin.
+   * Ignored while `shimmer` is active. Default `true`.
+   */
+  animate?: boolean;
 };
+
+function easeOutCubic(t: number): number {
+  const u = 1 - t;
+  return 1 - u * u * u;
+}
+
+function blitFull(
+  ctx: CanvasRenderingContext2D,
+  bake: HTMLCanvasElement,
+  dpr: number,
+  cssW: number,
+  cssH: number,
+): void {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.clearRect(0, 0, cssW, cssH);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(bake, 0, 0);
+}
+
+/** Vertical bars: reveal height grows upward from the bottom (baseline). */
+function blitGrowVertical(
+  ctx: CanvasRenderingContext2D,
+  bake: HTMLCanvasElement,
+  dpr: number,
+  cssW: number,
+  cssH: number,
+  revealH: number,
+): void {
+  const h = Math.max(0, revealH);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.clearRect(0, 0, cssW, cssH);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(bake, 0, 0);
+  ctx.globalCompositeOperation = 'destination-in';
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, cssH - h, cssW, h);
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+/** Horizontal bars: reveal width grows rightward from the left (baseline). */
+function blitGrowHorizontal(
+  ctx: CanvasRenderingContext2D,
+  bake: HTMLCanvasElement,
+  dpr: number,
+  cssW: number,
+  cssH: number,
+  revealW: number,
+): void {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.clearRect(0, 0, cssW, cssH);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(bake, 0, 0);
+  ctx.globalCompositeOperation = 'destination-in';
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, Math.max(0, revealW), cssH);
+  ctx.globalCompositeOperation = 'source-over';
+}
 
 /**
  * Draws chunky pixel bars inside the Recharts plot area via Canvas2D.
@@ -38,6 +106,7 @@ export function PixelBarPlotLayer({
   fill = 'bands',
   layout = 'horizontal',
   shimmer = false,
+  animate = true,
 }: PixelBarPlotLayerProps) {
   const plot = usePlotArea();
   const yScale = useYAxisScale();
@@ -114,15 +183,46 @@ export function PixelBarPlotLayer({
       ditherTiles: ditherTilesRef.current,
     });
 
-    if (!shimmer) {
-      const ctx = canvas.getContext('2d');
-      if (ctx == null) return;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, cssW, cssH);
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(bake, 0, 0);
+    if (shimmer) return;
+
+    const ctx = canvas.getContext('2d');
+    if (ctx == null) return;
+
+    if (!animate) {
+      blitFull(ctx, bake, dpr, cssW, cssH);
+      return;
     }
-  }, [barLayout, series, fill, shimmer]);
+
+    // Recharts: `horizontal` = vertical bars; `vertical` = horizontal bars.
+    const verticalBars = layout === 'horizontal';
+    let raf = 0;
+    const start = performance.now();
+
+    const tick = (now: number) => {
+      const liveBake = bakeRef.current;
+      if (liveBake == null) return;
+
+      const t = Math.min(1, (now - start) / DUNE_DURATION);
+      const eased = easeOutCubic(t);
+
+      if (verticalBars) {
+        blitGrowVertical(ctx, liveBake, dpr, cssW, cssH, cssH * eased);
+      } else {
+        blitGrowHorizontal(ctx, liveBake, dpr, cssW, cssH, cssW * eased);
+      }
+
+      if (t < 1) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        blitFull(ctx, liveBake, dpr, cssW, cssH);
+      }
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+    };
+  }, [barLayout, series, fill, shimmer, animate, layout]);
 
   const plotSizeKey = barLayout == null ? '' : `${barLayout.plotW}x${barLayout.plotH}`;
   useLayoutEffect(() => {

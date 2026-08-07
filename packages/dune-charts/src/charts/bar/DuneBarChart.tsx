@@ -387,6 +387,7 @@ function DuneBarChartRoot<T extends Record<string, unknown>>({
               pixel={pixel}
               fill={fill}
               layout={barLayout}
+              animate={!prefersReducedMotion}
             />
           ) : null}
 
