@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import type { PixelWaveBands, PixelWaveSeries } from '../shared/pixelWaveEngine';
 import {
+  appendBresenhamRun,
   appendHorizontalRun,
   appendVerticalRun,
   computePixelLinePlotLayout,
-  rasterizeStepAfter,
+  rasterizeLinear,
   type PixelLineCell,
 } from './pixelLineEngine';
 
@@ -39,9 +40,9 @@ describe('appendHorizontalRun / appendVerticalRun', () => {
   });
 });
 
-describe('rasterizeStepAfter', () => {
-  it('draws H then V between consecutive points', () => {
-    const cells = rasterizeStepAfter(
+describe('rasterizeLinear / appendBresenhamRun', () => {
+  it('draws a diagonal between consecutive points', () => {
+    const cells = rasterizeLinear(
       [
         { x: 0, y: 40 },
         { x: 12, y: 20 },
@@ -49,18 +50,20 @@ describe('rasterizeStepAfter', () => {
       4,
     );
     const keys = new Set(sortedKeys(cells));
-    // horizontal at y=40 from x=0..12
     expect(keys.has('0,40')).toBe(true);
-    expect(keys.has('12,40')).toBe(true);
-    // vertical at x=12 from y=40..20
     expect(keys.has('12,20')).toBe(true);
-    expect(keys.has('12,36')).toBe(true);
-    // no diagonal shortcut
-    expect(keys.has('4,36')).toBe(false);
+    // Diagonal visits mid cells (not pure H-then-V step corner at 12,40 alone as the only bridge)
+    expect(keys.has('4,36') || keys.has('4,32') || keys.has('8,28') || keys.has('8,24')).toBe(true);
   });
 
   it('keeps a single point as one cell', () => {
-    expect(rasterizeStepAfter([{ x: 8, y: 16 }], 4)).toEqual([{ x: 8, y: 16 }]);
+    expect(rasterizeLinear([{ x: 8, y: 16 }], 4)).toEqual([{ x: 8, y: 16 }]);
+  });
+
+  it('fills a pure horizontal via Bresenham', () => {
+    const cells = new Map<string, PixelLineCell>();
+    appendBresenhamRun(cells, 0, 20, 12, 20, 4);
+    expect(sortedKeys([...cells.values()])).toEqual(['0,20', '12,20', '4,20', '8,20']);
   });
 });
 
@@ -93,7 +96,7 @@ describe('computePixelLinePlotLayout', () => {
     expect(layout!.paths[0]?.cells).toEqual([{ x: 60, y: 60 }]);
   });
 
-  it('builds a continuous step-after path across category centers', () => {
+  it('builds a continuous linear path across category centers', () => {
     const indexValues = ['a', 'b', 'c'];
     const centers = [20, 60, 100];
     const xScale = (value: unknown) => {
@@ -114,12 +117,12 @@ describe('computePixelLinePlotLayout', () => {
     expect(path).toBeDefined();
     const keys = new Set(sortedKeys(path.cells));
 
-    // snapped centers: 20→20, 60→60, 100→100; y for 40→60, 20→80, 40→60
+    // snapped centers: 20, 60, 100; y for 40→60, 20→80, 40→60
     expect(keys.has('20,60')).toBe(true);
-    expect(keys.has('60,60')).toBe(true); // end of first H
-    expect(keys.has('60,80')).toBe(true); // end of first V
-    expect(keys.has('100,80')).toBe(true); // end of second H
-    expect(keys.has('100,60')).toBe(true); // end of second V
+    expect(keys.has('60,80')).toBe(true);
+    expect(keys.has('100,60')).toBe(true);
+    // Linear path should include diagonal midpoints, not only H-then-V corners
+    expect(path.cells.length).toBeGreaterThan(3);
   });
 
   it('emits one path per series', () => {

@@ -86,7 +86,7 @@ const Line = markDunePart(
     dataKey,
     color: _color,
     bands: _bands,
-    type = 'stepAfter',
+    type = 'linear',
     strokeOpacity = 0,
     strokeWidth = 2,
     dot = false,
@@ -288,7 +288,7 @@ function DuneLineChartRoot<T extends Record<string, unknown>>({
                   shimmer={!prefersReducedMotion}
                 />
                 <RechartsLine
-                  type="stepAfter"
+                  type="linear"
                   dataKey={LOADING_AREA_VALUE_KEY}
                   stroke="transparent"
                   strokeOpacity={0}

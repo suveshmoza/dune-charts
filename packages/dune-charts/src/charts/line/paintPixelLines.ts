@@ -7,7 +7,7 @@ export type PaintPixelLinesOptions = {
 };
 
 /**
- * Paint stepped pixel line cells into a plot-local canvas context.
+ * Paint pixel line cells into a plot-local canvas context.
  * Cell coords are chart-absolute; this subtracts plot origin.
  */
 export function paintPixelLines(

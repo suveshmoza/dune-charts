@@ -183,7 +183,7 @@ export function ChartCanvas({
           loading={loading}
           height={height}
           title={variant === 'multi' ? 'Multi-series line' : 'Simple line'}
-          description="Stepped pixel lines."
+          description="Pixel polyline (linear segments)."
           valueFormatter={(value) => String(value)}
         >
           <DuneLineChart.Grid />

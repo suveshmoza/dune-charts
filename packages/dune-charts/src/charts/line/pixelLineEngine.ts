@@ -86,10 +86,49 @@ export function appendVerticalRun(
 }
 
 /**
- * Step-after path between snapped points: horizontal to next x at current y,
- * then vertical to next y at next x.
+ * Bresenham line on the pixel grid between two snapped points (inclusive).
+ * Matches Recharts `type="linear"` connectivity while staying 1 cell thick.
  */
-export function rasterizeStepAfter(
+export function appendBresenhamRun(
+  cells: Map<string, PixelLineCell>,
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  pixel: number,
+): void {
+  let gx0 = Math.round(x0 / pixel);
+  let gy0 = Math.round(y0 / pixel);
+  const gx1 = Math.round(x1 / pixel);
+  const gy1 = Math.round(y1 / pixel);
+
+  const dx = Math.abs(gx1 - gx0);
+  const dy = Math.abs(gy1 - gy0);
+  const sx = gx0 < gx1 ? 1 : -1;
+  const sy = gy0 < gy1 ? 1 : -1;
+  let err = dx - dy;
+
+  for (;;) {
+    const x = gx0 * pixel;
+    const y = gy0 * pixel;
+    cells.set(cellKey(x, y), { x, y });
+    if (gx0 === gx1 && gy0 === gy1) break;
+    const e2 = 2 * err;
+    if (e2 > -dy) {
+      err -= dy;
+      gx0 += sx;
+    }
+    if (e2 < dx) {
+      err += dx;
+      gy0 += sy;
+    }
+  }
+}
+
+/**
+ * Linear (diagonal) path between snapped points — Recharts-style polyline.
+ */
+export function rasterizeLinear(
   points: readonly { x: number; y: number }[],
   pixel: number,
 ): PixelLineCell[] {
@@ -105,15 +144,14 @@ export function rasterizeStepAfter(
     const a = points[i];
     const b = points[i + 1];
     if (a == null || b == null) continue;
-    appendHorizontalRun(cells, a.x, b.x, a.y, pixel);
-    appendVerticalRun(cells, a.y, b.y, b.x, pixel);
+    appendBresenhamRun(cells, a.x, a.y, b.x, b.y, pixel);
   }
 
   return [...cells.values()];
 }
 
 /**
- * Discrete stepped pixel lines at category centers (step-after, 1 cell thick).
+ * Discrete pixel lines at category centers (linear segments, 1 cell thick).
  */
 export function computePixelLinePlotLayout(
   series: readonly PixelWaveSeries[],
@@ -167,7 +205,7 @@ export function computePixelLinePlotLayout(
 
     paths.push({
       seriesName: s.name,
-      cells: rasterizeStepAfter(points, pixel),
+      cells: rasterizeLinear(points, pixel),
     });
   }
 

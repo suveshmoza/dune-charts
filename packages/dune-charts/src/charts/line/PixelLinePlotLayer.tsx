@@ -18,7 +18,7 @@ export type PixelLinePlotLayerProps = {
   indexValues?: readonly unknown[];
   pixel?: number;
   /**
-   * Traveling opacity mask over baked stepped lines (loading skeleton).
+   * Traveling opacity mask over baked pixel lines (loading skeleton).
    * Same soft beam as area/bar/pie loading.
    * When true, entrance wipe is skipped.
    */
@@ -69,7 +69,7 @@ function blitWipe(
 }
 
 /**
- * Draws stepped pixel lines inside the Recharts plot area via Canvas2D.
+ * Draws pixel lines inside the Recharts plot area via Canvas2D.
  * Pointer events stay on Line series for tooltip / legend.
  */
 export function PixelLinePlotLayer({
@@ -158,6 +158,7 @@ export function PixelLinePlotLayer({
     };
 
     raf = requestAnimationFrame(tick);
+    // oxlint-disable-next-line typescript/consistent-return
     return () => {
       cancelAnimationFrame(raf);
     };
