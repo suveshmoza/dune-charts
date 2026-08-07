@@ -1,7 +1,6 @@
 import {
   DuneAreaChart,
   DuneBarChart,
-  DuneComposedChart,
   DuneLineChart,
   DunePieChart,
   DuneRadarChart,
@@ -441,34 +440,7 @@ export function ChartRadialSemi({ fill = 'bands', pixel = 2, loading = false }: 
   );
 }
 
-/** Bars + line on shared scales. */
-export function ChartComposedBarLine({ fill = 'bands', pixel = 2 }: ChartControls) {
-  const { data, rangeToggle } = useRangeData();
-
-  return (
-    <ChartCard
-      title="Pixel composed"
-      description="Bars for volume, line for a companion series — one chart, shared scales."
-      actions={rangeToggle}
-    >
-      <DuneComposedChart<ThroughputRow>
-        data={data}
-        index="month"
-        bars={['melange', 'water']}
-        lines={['thrift']}
-        height={280}
-        title="Pixel composed"
-        description="Composed bar and line throughput."
-        config={throughputConfig}
-        fill={fill}
-        pixel={pixel}
-        valueFormatter={(value) => String(value)}
-      />
-    </ChartCard>
-  );
-}
-
-/** Gallery of area + bar + line + pie + radar + radial + composed chart variants. */
+/** Gallery of area + bar + line + pie + radar + radial chart variants. */
 export function ChartAreaInteractive(props: ChartControls) {
   return (
     <div className="db-chart-gallery">
@@ -485,7 +457,6 @@ export function ChartAreaInteractive(props: ChartControls) {
       <ChartRadarSimple {...props} />
       <ChartRadialSimple {...props} />
       <ChartRadialSemi {...props} />
-      <ChartComposedBarLine {...props} />
     </div>
   );
 }

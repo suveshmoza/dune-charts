@@ -34,7 +34,6 @@ type RechartsLineChart = typeof import('recharts').LineChart;
 type RechartsPieChart = typeof import('recharts').PieChart;
 type RechartsRadarChart = typeof import('recharts').RadarChart;
 type RechartsRadialBarChart = typeof import('recharts').RadialBarChart;
-type RechartsComposedChart = typeof import('recharts').ComposedChart;
 
 /** Pass-through AreaChart props; Dune owns `data` / `children`. */
 export type DuneAreaChartPassThrough = Omit<
@@ -70,12 +69,6 @@ export type DuneLineChartPassThrough = Omit<
 export type DuneLineSeriesPassThrough = Omit<
   LineProps<unknown, unknown>,
   'dataKey' | 'data' | 'name'
->;
-
-/** Pass-through ComposedChart props; Dune owns `data` / `children`. */
-export type DuneComposedChartPassThrough = Omit<
-  ComponentPropsWithoutRef<RechartsComposedChart>,
-  'data' | 'children'
 >;
 
 /** Pass-through PieChart props; Dune owns `data` / `children`. */
@@ -154,29 +147,6 @@ export type DuneBarChartProps<T> = DuneCartesianSharedProps<T> & {
 export type DuneLineChartProps<T> = DuneCartesianBaseProps<T> & {
   chartProps?: DuneLineChartPassThrough;
   seriesProps?: Partial<Record<DataKey<T>, DuneLineSeriesPassThrough>>;
-};
-
-/**
- * Mixed area + bar + line on one `ComposedChart` with shared scales.
- * Partition keys with `areas` / `bars` / `lines` (prefer no overlap).
- * Color order is areas, then bars, then lines.
- */
-export type DuneComposedChartProps<T extends Record<string, unknown>> = Omit<
-  DuneCartesianBaseProps<T>,
-  'categories'
-> & {
-  /** Keys painted as pixel-wave areas (+ transparent `<Area>`). */
-  areas?: readonly DataKey<T>[];
-  /** Keys painted as pixel bars (+ transparent `<Bar>`). */
-  bars?: readonly DataKey<T>[];
-  /** Keys painted as stepped pixel lines (+ transparent `<Line>`). */
-  lines?: readonly DataKey<T>[];
-  /** Pixel fill for area + bar layers. `bands` (default) or Bayer `dither`. */
-  fill?: PixelWaveFill;
-  chartProps?: DuneComposedChartPassThrough;
-  areaSeriesProps?: Partial<Record<DataKey<T>, DuneAreaSeriesPassThrough>>;
-  barSeriesProps?: Partial<Record<DataKey<T>, DuneBarSeriesPassThrough>>;
-  lineSeriesProps?: Partial<Record<DataKey<T>, DuneLineSeriesPassThrough>>;
 };
 
 export type DunePieChartProps<T extends Record<string, unknown>> = {
