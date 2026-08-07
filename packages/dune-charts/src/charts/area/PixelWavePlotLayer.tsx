@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { usePlotArea, useXAxisScale, useYAxisScale } from 'recharts';
 
+import { DUNE_DURATION } from '../shared/chartShell';
 import {
   fillShimmerMask,
   SHIMMER_MS,
@@ -25,9 +26,53 @@ export type PixelWavePlotLayerProps = {
   /**
    * Traveling opacity mask over a baked paint (loading skeleton).
    * Cheap: area painted once; each frame only composites the sweep.
+   * When true, entrance wipe is skipped.
    */
   shimmer?: boolean;
+  /**
+   * One-shot left→right wipe reveal of the baked pixels.
+   * Ignored while `shimmer` is active. Default `true`.
+   */
+  animate?: boolean;
 };
+
+function easeOutCubic(t: number): number {
+  const u = 1 - t;
+  return 1 - u * u * u;
+}
+
+function blitFull(
+  ctx: CanvasRenderingContext2D,
+  bake: HTMLCanvasElement,
+  dpr: number,
+  cssW: number,
+  cssH: number,
+): void {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.clearRect(0, 0, cssW, cssH);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(bake, 0, 0);
+}
+
+function blitWipe(
+  ctx: CanvasRenderingContext2D,
+  bake: HTMLCanvasElement,
+  dpr: number,
+  cssW: number,
+  cssH: number,
+  revealW: number,
+): void {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.clearRect(0, 0, cssW, cssH);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(bake, 0, 0);
+  ctx.globalCompositeOperation = 'destination-in';
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, Math.max(0, revealW), cssH);
+  ctx.globalCompositeOperation = 'source-over';
+}
 
 /**
  * Draws chunky pixel-wave fills inside the Recharts plot area via Canvas2D.
@@ -40,6 +85,7 @@ export function PixelWavePlotLayer({
   pixel = 2,
   fill = 'bands',
   shimmer = false,
+  animate = true,
 }: PixelWavePlotLayerProps) {
   const plot = usePlotArea();
   const yScale = useYAxisScale();
@@ -63,7 +109,7 @@ export function PixelWavePlotLayer({
     });
   }, [plot, yScale, xScale, series, pointCount, pixel, indexValues]);
 
-  // Bake (and static paint) whenever geometry / series change — without restarting shimmer.
+  // Bake whenever geometry / series change. Entrance wipe or static blit follows.
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (canvas == null || layout == null) return;
@@ -98,15 +144,40 @@ export function PixelWavePlotLayer({
       ditherTiles: ditherTilesRef.current,
     });
 
-    if (!shimmer) {
-      const ctx = canvas.getContext('2d');
-      if (ctx == null) return;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, cssW, cssH);
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(bake, 0, 0);
+    // Loading shimmer owns the display loop.
+    if (shimmer) return;
+
+    const ctx = canvas.getContext('2d');
+    if (ctx == null) return;
+
+    if (!animate) {
+      blitFull(ctx, bake, dpr, cssW, cssH);
+      return;
     }
-  }, [layout, series, fill, shimmer]);
+
+    let raf = 0;
+    const start = performance.now();
+
+    const tick = (now: number) => {
+      const liveBake = bakeRef.current;
+      if (liveBake == null) return;
+
+      const t = Math.min(1, (now - start) / DUNE_DURATION);
+      const revealW = cssW * easeOutCubic(t);
+      blitWipe(ctx, liveBake, dpr, cssW, cssH, revealW);
+
+      if (t < 1) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        blitFull(ctx, liveBake, dpr, cssW, cssH);
+      }
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+    };
+  }, [layout, series, fill, shimmer, animate]);
 
   // Shimmer loop — size-stable; re-bake above updates pixels mid-sweep.
   const plotSizeKey = layout == null ? '' : `${layout.plotW}x${layout.plotH}`;

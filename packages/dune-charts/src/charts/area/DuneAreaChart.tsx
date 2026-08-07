@@ -349,6 +349,7 @@ function DuneAreaChartRoot<T extends Record<string, unknown>>({
               indexValues={indexValues}
               pixel={pixel}
               fill={fill}
+              animate={!prefersReducedMotion}
             />
           ) : null}
 
