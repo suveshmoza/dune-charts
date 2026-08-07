@@ -1,20 +1,34 @@
-import { useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
-  Area,
+  Children,
+  cloneElement,
+  isValidElement,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
+import {
+  Area as RechartsArea,
   AreaChart,
-  CartesianGrid,
-  Legend,
   ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
-  type TooltipContentProps,
+  type AreaProps,
 } from 'recharts';
 
 import { DuneChartContainer } from '../../primitives/DuneChartContainer';
+import type { DuneChartSize } from '../../primitives/DuneChartContainer';
 import { DEFAULT_LOADING_MESSAGE, DuneChartLoadingBadge } from '../../primitives/DuneChartLoading';
 import { useDuneTheme } from '../../provider/DuneChartProvider';
-import type { DuneCartesianChartProps } from '../../types';
+import type {
+  DataKey,
+  DuneAreaChartPassThrough,
+  DuneAreaSeriesPassThrough,
+  DuneCartesianChartProps,
+  DuneSeriesConfig,
+} from '../../types';
 import { usePrefersReducedMotion } from '../../utils/reducedMotion';
 import {
   buildSeriesStyle,
@@ -24,36 +38,119 @@ import {
 } from '../../utils/series';
 import { buildSeriesList } from '../shared/buildSeriesList';
 import {
+  DuneCartesianGrid,
+  DuneLegend,
+  DuneTooltip,
+  DuneXAxis,
+  DuneYAxis,
+} from '../shared/cartesianParts';
+import {
   buildLoadingAreaRows,
   buildLoadingAreaSeriesFromRows,
   DEFAULT_LOADING_AREA_COUNT,
   LOADING_AREA_INDEX_KEY,
   LOADING_AREA_VALUE_KEY,
 } from '../shared/chartLoadingBars';
-import type { PixelWaveBands } from '../shared/pixelWaveEngine';
+import {
+  ChartEmptyState,
+  ChartLoadingShell,
+  DEFAULT_EMPTY_MESSAGE,
+  DEFAULT_PIXEL,
+  DUNE_DURATION,
+  DUNE_EASE,
+  clampPixel,
+} from '../shared/chartShell';
+import {
+  asDataKeyString,
+  ChartCompositionProvider,
+  collectChartParts,
+  markDunePart,
+  mergeSeriesConfig,
+  readPartMetaFromType,
+  seriesPropsFromRegistry,
+  type ChartCompositionValue,
+} from '../shared/composition';
+import type { PixelWaveBands, PixelWaveFill } from '../shared/pixelWaveEngine';
 import { PixelWavePlotLayer } from './PixelWavePlotLayer';
 
-export type DuneAreaChartProps<T> = DuneCartesianChartProps<T>;
+export type DuneAreaChartAreaProps = Omit<AreaProps<unknown, unknown>, 'data' | 'name' | 'fill'> & {
+  dataKey: string;
+  /** Pixel fill style for this series (falls back to chart `fill`). */
+  fill?: PixelWaveFill;
+  color?: string;
+  bands?: PixelWaveBands;
+};
 
-const DUNE_EASE = 'ease-out';
-const DUNE_DURATION = 520;
-const DEFAULT_PIXEL = 2;
-const DEFAULT_EMPTY_MESSAGE = 'No data to display';
+const Area = markDunePart(
+  function Area({
+    dataKey,
+    fill: _pixelFill,
+    color: _color,
+    bands: _bands,
+    stackId,
+    type = 'monotone',
+    strokeOpacity = 0,
+    strokeWidth = 2,
+    strokeLinecap = 'square',
+    strokeLinejoin = 'miter',
+    dot = false,
+    legendType = 'square',
+    ...rest
+  }: DuneAreaChartAreaProps) {
+    const prefersReducedMotion = usePrefersReducedMotion();
+    return (
+      <RechartsArea
+        type={type}
+        dataKey={dataKey}
+        name={dataKey}
+        stackId={stackId}
+        stroke="transparent"
+        fill="transparent"
+        strokeOpacity={strokeOpacity}
+        strokeWidth={strokeWidth}
+        strokeLinecap={strokeLinecap}
+        strokeLinejoin={strokeLinejoin}
+        dot={dot}
+        activeDot={{ r: 4, strokeWidth: 0 }}
+        animationDuration={DUNE_DURATION}
+        animationEasing={DUNE_EASE}
+        isAnimationActive={!prefersReducedMotion}
+        legendType={legendType}
+        {...rest}
+      />
+    );
+  },
+  (props) => ({
+    part: 'series',
+    kind: 'area',
+    dataKey: props.dataKey,
+    fill: props.fill,
+    color: props.color,
+    bands: props.bands,
+    stackId: props.stackId,
+  }),
+);
 
-function clampPixel(pixel: number | undefined): number {
-  if (pixel == null || !Number.isFinite(pixel)) return DEFAULT_PIXEL;
-  return Math.max(1, Math.floor(pixel));
-}
+export type DuneAreaChartRootProps<T extends Record<string, unknown>> = {
+  data: readonly T[];
+  config?: Partial<Record<DataKey<T>, DuneSeriesConfig>>;
+  fill?: PixelWaveFill;
+  pixel?: number;
+  className?: string;
+  height?: DuneChartSize;
+  title?: string;
+  description?: string;
+  emptyMessage?: string;
+  loading?: boolean;
+  loadingMessage?: string;
+  loadingIndicator?: ReactNode;
+  valueFormatter?: (value: number, key: DataKey<T>) => string;
+  chartProps?: DuneAreaChartPassThrough;
+  children?: ReactNode;
+};
 
-function toCssSize(value: number | string | undefined): string | undefined {
-  if (value == null) return undefined;
-  return typeof value === 'number' ? `${value}px` : value;
-}
-
-export function DuneAreaChart<T extends Record<string, unknown>>({
+function DuneAreaChartRoot<T extends Record<string, unknown>>({
   data,
-  categories,
-  index,
   config,
   fill = 'bands',
   pixel: pixelProp,
@@ -67,24 +164,31 @@ export function DuneAreaChart<T extends Record<string, unknown>>({
   loadingIndicator,
   valueFormatter,
   chartProps,
-  seriesProps,
-  xAxisProps,
-  yAxisProps,
-  tooltipProps,
-  legendProps,
   children,
-}: DuneAreaChartProps<T>) {
+}: DuneAreaChartRootProps<T>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
-  const pixel = clampPixel(pixelProp);
+  const pixel = clampPixel(pixelProp, DEFAULT_PIXEL);
   const { theme } = useDuneTheme();
-  const seriesStyle = buildSeriesStyle(categories, config);
+
+  const collected = useMemo(() => collectChartParts(children), [children]);
+  const categories = useMemo(
+    () => collected.series.map((entry) => entry.dataKey),
+    [collected.series],
+  );
+  const indexKey = collected.indexKey;
+  const mergedConfig = useMemo(
+    () => mergeSeriesConfig(config as Partial<Record<string, DuneSeriesConfig>>, collected.series),
+    [config, collected.series],
+  );
+  const seriesPropMap = useMemo(
+    () => seriesPropsFromRegistry(collected.series),
+    [collected.series],
+  );
+
+  const seriesStyle = buildSeriesStyle(categories, mergedConfig);
   const [baseColors, setBaseColors] = useState<string[]>([]);
   const [trackColor, setTrackColor] = useState('#d9d3c8');
-  const emptyId = useId();
-  const emptyTitleId = title ? `${emptyId}-title` : undefined;
-  const emptyDescId = description ? `${emptyId}-description` : undefined;
-  const emptyMessageId = `${emptyId}-message`;
 
   useLayoutEffect(() => {
     const host = containerRef.current;
@@ -95,21 +199,31 @@ export function DuneAreaChart<T extends Record<string, unknown>>({
       return;
     }
     setBaseColors(resolveSeriesBaseColors(host, categories.length));
-  }, [categories, config, theme, loading]);
+  }, [categories, mergedConfig, theme, loading]);
 
   const waveSeries = useMemo(
-    () => buildSeriesList(data, categories, config, baseColors, seriesProps, chartProps),
-    [data, categories, config, baseColors, seriesProps, chartProps],
+    () =>
+      buildSeriesList(
+        data,
+        categories as DataKey<T>[],
+        mergedConfig as Partial<Record<DataKey<T>, DuneSeriesConfig>>,
+        baseColors,
+        seriesPropMap as Partial<Record<DataKey<T>, { stackId?: string | number }>>,
+        chartProps,
+      ),
+    [data, categories, mergedConfig, baseColors, seriesPropMap, chartProps],
   );
-  const paintsReady = baseColors.length === categories.length;
-  const indexValues = useMemo(() => data.map((row) => row[index]), [data, index]);
+  const paintsReady = categories.length > 0 && baseColors.length === categories.length;
+  const indexValues = useMemo(() => {
+    if (indexKey == null) return data.map((_, i) => i);
+    return data.map((row) => row[indexKey as DataKey<T>]);
+  }, [data, indexKey]);
 
   const loadingPointCount = useMemo(() => {
     if (data.length > 0) return Math.max(8, Math.min(24, data.length));
     return DEFAULT_LOADING_AREA_COUNT;
   }, [data.length]);
 
-  // Stable skeleton — heights do not re-roll while loading.
   const loadingRows = useMemo(() => buildLoadingAreaRows(loadingPointCount), [loadingPointCount]);
   const loadingSeries = useMemo(
     () => buildLoadingAreaSeriesFromRows(loadingRows, trackColor),
@@ -120,233 +234,246 @@ export function DuneAreaChart<T extends Record<string, unknown>>({
     [loadingRows],
   );
 
-  if (!loading && data.length === 0) {
-    const emptyStyle: CSSProperties = {
-      ...seriesStyle,
-      height: toCssSize(height),
-      minHeight: toCssSize(height) ?? 160,
-    };
+  const compositionValue = useMemo<ChartCompositionValue>(
+    () => ({
+      data,
+      config: mergedConfig,
+      pixel,
+      fill,
+      loading,
+      valueFormatter: valueFormatter as ((value: number, key: string) => string) | undefined,
+      title,
+      categories,
+      indexKey,
+      series: collected.series,
+      stackOffset: chartProps?.stackOffset,
+    }),
+    [
+      data,
+      mergedConfig,
+      pixel,
+      fill,
+      loading,
+      valueFormatter,
+      title,
+      categories,
+      indexKey,
+      collected.series,
+      chartProps?.stackOffset,
+    ],
+  );
 
+  if (!loading && data.length === 0) {
     return (
-      <div
-        className={['dune-chart-container', 'dune-chart-empty', className]
-          .filter(Boolean)
-          .join(' ')}
-        style={emptyStyle}
-        role="status"
-        aria-labelledby={emptyTitleId}
-        aria-describedby={[emptyDescId, emptyMessageId].filter(Boolean).join(' ') || undefined}
-      >
-        {title ? (
-          <span id={emptyTitleId} className="dune-sr-only">
-            {title}
-          </span>
-        ) : null}
-        {description ? (
-          <span id={emptyDescId} className="dune-sr-only">
-            {description}
-          </span>
-        ) : null}
-        <p id={emptyMessageId} className="dune-chart-empty__message">
-          {emptyMessage}
-        </p>
-      </div>
+      <ChartEmptyState
+        className={className}
+        style={seriesStyle}
+        height={height}
+        title={title}
+        description={description}
+        emptyMessage={emptyMessage}
+      />
     );
   }
 
   if (loading) {
-    const loadingStyle: CSSProperties = {
-      ...seriesStyle,
-      height: toCssSize(height),
-      minHeight: toCssSize(height) ?? 160,
-      position: 'relative',
-    };
-
     return (
-      <div
-        ref={containerRef}
-        className={['dune-chart-container', 'dune-chart-loading-shell', className]
-          .filter(Boolean)
-          .join(' ')}
-        style={loadingStyle}
-        role="status"
-        aria-busy="true"
-        aria-live="polite"
-      >
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart
-            data={loadingRows}
-            margin={{ top: 12, right: 16, left: 4, bottom: 4 }}
-            accessibilityLayer={false}
-          >
-            <XAxis dataKey={LOADING_AREA_INDEX_KEY} hide />
-            <YAxis hide domain={[0, 100]} width={0} />
-
-            <PixelWavePlotLayer
-              series={loadingSeries}
-              pointCount={loadingRows.length}
-              indexValues={loadingIndexValues}
-              pixel={pixel}
-              fill="dither"
-              shimmer={!prefersReducedMotion}
-            />
-
-            <Area
-              type="monotone"
-              dataKey={LOADING_AREA_VALUE_KEY}
-              fill="transparent"
-              stroke="none"
-              isAnimationActive={false}
-              legendType="none"
-              tooltipType="none"
-              activeDot={false}
-              dot={false}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-
-        <DuneChartLoadingBadge message={loadingMessage} indicator={loadingIndicator} />
-      </div>
+      <ChartCompositionProvider value={compositionValue}>
+        <ChartLoadingShell
+          className={className}
+          style={seriesStyle}
+          height={height}
+          badge={<DuneChartLoadingBadge message={loadingMessage} indicator={loadingIndicator} />}
+        >
+          <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={loadingRows}
+                margin={{ top: 12, right: 16, left: 4, bottom: 4 }}
+                accessibilityLayer={false}
+              >
+                <XAxis dataKey={LOADING_AREA_INDEX_KEY} hide />
+                <YAxis hide domain={[0, 100]} width={0} />
+                <PixelWavePlotLayer
+                  series={loadingSeries}
+                  pointCount={loadingRows.length}
+                  indexValues={loadingIndexValues}
+                  pixel={pixel}
+                  fill="dither"
+                  shimmer={!prefersReducedMotion}
+                />
+                <RechartsArea
+                  type="monotone"
+                  dataKey={LOADING_AREA_VALUE_KEY}
+                  fill="transparent"
+                  stroke="none"
+                  isAnimationActive={false}
+                  legendType="none"
+                  tooltipType="none"
+                  activeDot={false}
+                  dot={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartLoadingShell>
+      </ChartCompositionProvider>
     );
   }
-
-  const renderTooltip = ({ active, payload, label }: TooltipContentProps) => {
-    if (!active || payload == null || payload.length === 0) return null;
-
-    return (
-      <div className="dune-tooltip" role="status" aria-live="polite">
-        {label != null ? <div className="dune-tooltip__label">{String(label)}</div> : null}
-        <ul className="dune-tooltip__list">
-          {payload.map((entry) => {
-            const key = String(entry.dataKey ?? entry.name ?? '');
-            const seriesKey = categories.find((category) => category === key);
-            const raw = entry.value;
-            const numeric = typeof raw === 'number' ? raw : Number(raw);
-            const formatted =
-              valueFormatter && seriesKey != null && Number.isFinite(numeric)
-                ? valueFormatter(numeric, seriesKey)
-                : String(raw ?? '');
-            const name =
-              (seriesKey != null ? config?.[seriesKey]?.label : undefined) ?? entry.name ?? key;
-
-            return (
-              <li key={key} className="dune-tooltip__item" style={{ color: entry.color }}>
-                <span className="dune-tooltip__name">{name}</span>
-                <span className="dune-tooltip__value">{formatted}</span>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-    );
-  };
 
   const { accessibilityLayer: chartAccessibilityLayer = true, ...restChartProps } =
     chartProps ?? {};
 
+  // Inject per-series stroke colors by cloning isn't needed — render hit areas with indexed colors.
   return (
-    <DuneChartContainer
-      ref={containerRef}
+    <ChartCompositionProvider value={compositionValue}>
+      <DuneChartContainer
+        ref={containerRef}
+        className={className}
+        style={seriesStyle}
+        height={height}
+        title={title}
+        description={description}
+        initialDimension={{ width: 640, height: typeof height === 'number' ? height : 320 }}
+      >
+        <AreaChart
+          data={[...data]}
+          margin={{ top: 12, right: 16, left: 4, bottom: 4 }}
+          accessibilityLayer={chartAccessibilityLayer}
+          {...restChartProps}
+        >
+          {paintsReady ? (
+            <PixelWavePlotLayer
+              series={waveSeries}
+              pointCount={data.length}
+              indexValues={indexValues}
+              pixel={pixel}
+              fill={fill}
+            />
+          ) : null}
+
+          {rewriteAreaSeriesChildren(children, categories, mergedConfig, prefersReducedMotion)}
+        </AreaChart>
+      </DuneChartContainer>
+    </ChartCompositionProvider>
+  );
+}
+
+function rewriteAreaSeriesChildren(
+  children: ReactNode,
+  categories: readonly string[],
+  config: Partial<Record<string, DuneSeriesConfig>>,
+  prefersReducedMotion: boolean,
+): ReactNode {
+  return Children.map(children, (child) => {
+    if (!isValidElement(child)) return child;
+    const props = child.props as Record<string, unknown>;
+    const meta = readPartMetaFromType(child.type, props);
+    if (meta?.part === 'series' && meta.kind === 'area') {
+      const dataKey = asDataKeyString(props.dataKey);
+      const i = categories.indexOf(dataKey);
+      const color = i >= 0 ? getSeriesVar(i) : 'transparent';
+      return cloneElement(child as ReactElement<Record<string, unknown>>, {
+        name: config[dataKey]?.label ?? dataKey,
+        stroke: color,
+        activeDot: { r: 4, strokeWidth: 0, fill: color },
+        isAnimationActive: !prefersReducedMotion,
+      });
+    }
+    return child;
+  });
+}
+
+/** @deprecated Prefer compound children (`DuneAreaChart.Area`, `.XAxis`, …). */
+export type DuneAreaChartProps<T> = DuneCartesianChartProps<T>;
+
+function isLegacyAreaProps<T extends Record<string, unknown>>(
+  props: DuneAreaChartRootProps<T> | DuneAreaChartProps<T>,
+): props is DuneAreaChartProps<T> {
+  return 'categories' in props && Array.isArray(props.categories);
+}
+
+function DuneAreaChartLegacy<T extends Record<string, unknown>>(props: DuneAreaChartProps<T>) {
+  const {
+    data,
+    categories,
+    index,
+    config,
+    fill,
+    pixel,
+    className,
+    height,
+    title,
+    description,
+    emptyMessage,
+    loading,
+    loadingMessage,
+    loadingIndicator,
+    valueFormatter,
+    chartProps,
+    seriesProps,
+    xAxisProps,
+    yAxisProps,
+    tooltipProps,
+    legendProps,
+    children,
+  } = props;
+
+  return (
+    <DuneAreaChartRoot
+      data={data}
+      config={config}
+      fill={fill}
+      pixel={pixel}
       className={className}
-      style={seriesStyle}
       height={height}
       title={title}
       description={description}
-      initialDimension={{ width: 640, height: typeof height === 'number' ? height : 320 }}
+      emptyMessage={emptyMessage}
+      loading={loading}
+      loadingMessage={loadingMessage}
+      loadingIndicator={loadingIndicator}
+      valueFormatter={valueFormatter}
+      chartProps={chartProps}
     >
-      <AreaChart
-        data={[...data]}
-        margin={{ top: 12, right: 16, left: 4, bottom: 4 }}
-        accessibilityLayer={chartAccessibilityLayer}
-        {...restChartProps}
-      >
-        <CartesianGrid
-          stroke="var(--dune-grid)"
-          strokeWidth={1}
-          vertical={false}
-          horizontal={false}
-        />
-        <XAxis
-          dataKey={index}
-          stroke="var(--dune-tick)"
-          tick={{ fill: 'var(--dune-muted-text)', fontSize: 11 }}
-          tickLine={false}
-          axisLine={{ stroke: 'var(--dune-border)', strokeWidth: 2 }}
-          dy={4}
-          {...xAxisProps}
-        />
-        <YAxis
-          stroke="var(--dune-tick)"
-          tick={{ fill: 'var(--dune-muted-text)', fontSize: 11 }}
-          tickLine={false}
-          axisLine={false}
-          width={36}
-          domain={[0, 'auto']}
-          {...yAxisProps}
-        />
-
-        {paintsReady ? (
-          <PixelWavePlotLayer
-            series={waveSeries}
-            pointCount={data.length}
-            indexValues={indexValues}
-            pixel={pixel}
-            fill={fill}
-          />
-        ) : null}
-
-        <Tooltip
-          cursor={{ stroke: 'var(--dune-ink)', strokeWidth: 1, strokeDasharray: '4 4' }}
-          content={renderTooltip}
-          {...tooltipProps}
-        />
-        <Legend
-          iconType="square"
-          iconSize={10}
-          aria-label={title ? `${title} legend` : 'Chart legend'}
-          formatter={(value, entry) => {
-            const key = String(entry.dataKey ?? value);
-            const seriesKey = categories.find((category) => category === key);
-            return (seriesKey != null ? config?.[seriesKey]?.label : undefined) ?? value;
-          }}
-          {...legendProps}
-          wrapperStyle={{
-            color: 'var(--dune-muted-text)',
-            fontSize: 11,
-            paddingTop: 8,
-            ...legendProps?.wrapperStyle,
-          }}
-        />
-
-        {categories.map((key, i) => {
-          const color = getSeriesVar(i);
-          return (
-            <Area
-              key={key}
-              type="monotone"
-              dataKey={key}
-              name={config?.[key]?.label ?? key}
-              stroke={color}
-              fill="transparent"
-              strokeOpacity={0}
-              strokeWidth={2}
-              strokeLinecap="square"
-              strokeLinejoin="miter"
-              dot={false}
-              activeDot={{ r: 4, strokeWidth: 0, fill: color }}
-              animationDuration={DUNE_DURATION}
-              animationEasing={DUNE_EASE}
-              isAnimationActive={!prefersReducedMotion}
-              legendType="square"
-              {...seriesProps?.[key]}
-            />
-          );
-        })}
-
-        {children}
-      </AreaChart>
-    </DuneChartContainer>
+      <DuneCartesianGrid />
+      <DuneXAxis dataKey={index} {...xAxisProps} />
+      <DuneYAxis {...yAxisProps} />
+      <DuneTooltip {...tooltipProps} />
+      <DuneLegend {...legendProps} />
+      {categories.map((key) => {
+        const { fill: _rechartsFill, ...seriesRest } = (seriesProps?.[key] ??
+          {}) as DuneAreaSeriesPassThrough & { fill?: string };
+        return <Area key={key} dataKey={key} {...seriesRest} />;
+      })}
+      {children}
+    </DuneAreaChartRoot>
   );
 }
+
+function DuneAreaChartInner<T extends Record<string, unknown>>(
+  props: DuneAreaChartRootProps<T> | DuneAreaChartProps<T>,
+) {
+  if (isLegacyAreaProps(props)) {
+    return <DuneAreaChartLegacy {...props} />;
+  }
+  return <DuneAreaChartRoot {...props} />;
+}
+
+export const DuneAreaChart = Object.assign(DuneAreaChartInner, {
+  Grid: DuneCartesianGrid,
+  XAxis: DuneXAxis,
+  YAxis: DuneYAxis,
+  Tooltip: DuneTooltip,
+  Legend: DuneLegend,
+  Area: Area,
+}) as typeof DuneAreaChartInner & {
+  Grid: typeof DuneCartesianGrid;
+  XAxis: typeof DuneXAxis;
+  YAxis: typeof DuneYAxis;
+  Tooltip: typeof DuneTooltip;
+  Legend: typeof DuneLegend;
+  Area: typeof Area;
+};
 
 export type { PixelWaveBands };

@@ -8,7 +8,9 @@
     "allowArbitraryExtensions": true,
     "skipLibCheck": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@suveshmoza/dune-charts": ["../../packages/dune-charts/src/index.ts"],
+      "@suveshmoza/dune-charts/*": ["../../packages/dune-charts/src/*"]
     },
 
     /* Bundler mode */

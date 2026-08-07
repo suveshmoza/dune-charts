@@ -1,20 +1,34 @@
-import { useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
-  Legend,
+  Children,
+  cloneElement,
+  isValidElement,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
+import {
   PolarAngleAxis,
-  PolarGrid,
   PolarRadiusAxis,
-  Radar,
+  Radar as RechartsRadar,
   RadarChart,
   ResponsiveContainer,
-  Tooltip,
-  type TooltipContentProps,
+  type RadarProps,
 } from 'recharts';
 
 import { DuneChartContainer } from '../../primitives/DuneChartContainer';
+import type { DuneChartSize } from '../../primitives/DuneChartContainer';
 import { DEFAULT_LOADING_MESSAGE, DuneChartLoadingBadge } from '../../primitives/DuneChartLoading';
 import { useDuneTheme } from '../../provider/DuneChartProvider';
-import type { DuneRadarChartProps } from '../../types';
+import type {
+  DataKey,
+  DuneRadarChartPassThrough,
+  DuneRadarChartProps,
+  DuneRadarSeriesPassThrough,
+  DuneSeriesConfig,
+} from '../../types';
 import { usePrefersReducedMotion } from '../../utils/reducedMotion';
 import {
   buildSeriesStyle,
@@ -23,6 +37,7 @@ import {
   resolveSeriesBaseColors,
 } from '../../utils/series';
 import { buildSeriesList } from '../shared/buildSeriesList';
+import { DuneLegend, DuneTooltip } from '../shared/cartesianParts';
 import {
   buildLoadingRadarRows,
   buildLoadingRadarSeriesFromRows,
@@ -30,35 +45,103 @@ import {
   LOADING_RADAR_INDEX_KEY,
   LOADING_RADAR_VALUE_KEY,
 } from '../shared/chartLoadingBars';
+import {
+  ChartEmptyState,
+  ChartLoadingShell,
+  DEFAULT_EMPTY_MESSAGE,
+  DEFAULT_PIXEL,
+  DUNE_DURATION,
+  DUNE_EASE,
+  clampPixel,
+} from '../shared/chartShell';
+import {
+  asDataKeyString,
+  ChartCompositionProvider,
+  collectChartParts,
+  markDunePart,
+  mergeSeriesConfig,
+  readPartMetaFromType,
+  type ChartCompositionValue,
+} from '../shared/composition';
+import type { PixelWaveBands, PixelWaveFill } from '../shared/pixelWaveEngine';
+import { DunePolarAngleAxis, DunePolarGrid, DunePolarRadiusAxis } from '../shared/polarParts';
 import { PixelRadarPlotLayer } from './PixelRadarPlotLayer';
 
 export type { DuneRadarChartProps };
 
-const DUNE_EASE = 'ease-out';
-const DUNE_DURATION = 520;
-const DEFAULT_PIXEL = 2;
-const DEFAULT_EMPTY_MESSAGE = 'No data to display';
+export type DuneRadarChartRadarProps = Omit<
+  RadarProps<unknown, unknown>,
+  'data' | 'name' | 'fill'
+> & {
+  dataKey: string;
+  /** Pixel fill style for this series (falls back to chart `fill`). */
+  fill?: PixelWaveFill;
+  color?: string;
+  bands?: PixelWaveBands;
+};
 
-function clampPixel(pixel: number | undefined): number {
-  if (pixel == null || !Number.isFinite(pixel)) return DEFAULT_PIXEL;
-  return Math.max(1, Math.floor(pixel));
-}
+const Radar = markDunePart(
+  function Radar({
+    dataKey,
+    fill: _pixelFill,
+    color: _color,
+    bands: _bands,
+    strokeOpacity = 0,
+    fillOpacity = 0,
+    dot = false,
+    activeDot = false,
+    legendType = 'square',
+    ...rest
+  }: DuneRadarChartRadarProps) {
+    const prefersReducedMotion = usePrefersReducedMotion();
+    return (
+      <RechartsRadar
+        dataKey={dataKey}
+        name={dataKey}
+        stroke="transparent"
+        strokeOpacity={strokeOpacity}
+        fill="transparent"
+        fillOpacity={fillOpacity}
+        dot={dot}
+        activeDot={activeDot}
+        animationDuration={DUNE_DURATION}
+        animationEasing={DUNE_EASE}
+        isAnimationActive={!prefersReducedMotion}
+        legendType={legendType}
+        {...rest}
+      />
+    );
+  },
+  (props) => ({
+    part: 'series',
+    kind: 'radar',
+    dataKey: props.dataKey,
+    fill: props.fill,
+    color: props.color,
+    bands: props.bands,
+  }),
+);
 
-function toCssSize(value: number | string | undefined): string | undefined {
-  if (value == null) return undefined;
-  return typeof value === 'number' ? `${value}px` : value;
-}
+export type DuneRadarChartRootProps<T extends Record<string, unknown>> = {
+  data: readonly T[];
+  config?: Partial<Record<DataKey<T>, DuneSeriesConfig>>;
+  fill?: PixelWaveFill;
+  pixel?: number;
+  className?: string;
+  height?: DuneChartSize;
+  title?: string;
+  description?: string;
+  emptyMessage?: string;
+  loading?: boolean;
+  loadingMessage?: string;
+  loadingIndicator?: ReactNode;
+  valueFormatter?: (value: number, key: DataKey<T>) => string;
+  chartProps?: DuneRadarChartPassThrough;
+  children?: ReactNode;
+};
 
-function seriesColorForKey(categories: readonly string[], key: string): string | undefined {
-  const seriesIndex = categories.findIndex((category) => category === key);
-  if (seriesIndex < 0) return undefined;
-  return getSeriesVar(seriesIndex);
-}
-
-export function DuneRadarChart<T extends Record<string, unknown>>({
+function DuneRadarChartRoot<T extends Record<string, unknown>>({
   data,
-  categories,
-  index,
   config,
   fill = 'bands',
   pixel: pixelProp,
@@ -72,25 +155,27 @@ export function DuneRadarChart<T extends Record<string, unknown>>({
   loadingIndicator,
   valueFormatter,
   chartProps,
-  seriesProps,
-  polarAngleAxisProps,
-  polarRadiusAxisProps,
-  polarGridProps,
-  tooltipProps,
-  legendProps,
   children,
-}: DuneRadarChartProps<T>) {
+}: DuneRadarChartRootProps<T>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
-  const pixel = clampPixel(pixelProp);
+  const pixel = clampPixel(pixelProp, DEFAULT_PIXEL);
   const { theme } = useDuneTheme();
-  const seriesStyle = buildSeriesStyle(categories, config);
+
+  const collected = useMemo(() => collectChartParts(children), [children]);
+  const categories = useMemo(
+    () => collected.series.map((entry) => entry.dataKey),
+    [collected.series],
+  );
+  const indexKey = collected.indexKey;
+  const mergedConfig = useMemo(
+    () => mergeSeriesConfig(config as Partial<Record<string, DuneSeriesConfig>>, collected.series),
+    [config, collected.series],
+  );
+
+  const seriesStyle = buildSeriesStyle(categories, mergedConfig);
   const [baseColors, setBaseColors] = useState<string[]>([]);
   const [trackColor, setTrackColor] = useState('#d9d3c8');
-  const emptyId = useId();
-  const emptyTitleId = title ? `${emptyId}-title` : undefined;
-  const emptyDescId = description ? `${emptyId}-description` : undefined;
-  const emptyMessageId = `${emptyId}-message`;
 
   useLayoutEffect(() => {
     const host = containerRef.current;
@@ -101,13 +186,21 @@ export function DuneRadarChart<T extends Record<string, unknown>>({
       return;
     }
     setBaseColors(resolveSeriesBaseColors(host, categories.length));
-  }, [categories, config, theme, loading]);
+  }, [categories, mergedConfig, theme, loading]);
 
   const radarSeries = useMemo(
-    () => buildSeriesList(data, categories, config, baseColors, undefined, undefined),
-    [data, categories, config, baseColors],
+    () =>
+      buildSeriesList(
+        data,
+        categories as DataKey<T>[],
+        mergedConfig as Partial<Record<DataKey<T>, DuneSeriesConfig>>,
+        baseColors,
+        undefined,
+        undefined,
+      ),
+    [data, categories, mergedConfig, baseColors],
   );
-  const paintsReady = baseColors.length === categories.length && categories.length > 0;
+  const paintsReady = categories.length > 0 && baseColors.length === categories.length;
 
   const loadingPointCount = useMemo(() => {
     if (data.length > 0) return Math.max(5, Math.min(10, data.length));
@@ -120,216 +213,243 @@ export function DuneRadarChart<T extends Record<string, unknown>>({
     [loadingRows, trackColor],
   );
 
-  if (!loading && data.length === 0) {
-    const emptyStyle: CSSProperties = {
-      ...seriesStyle,
-      height: toCssSize(height),
-      minHeight: toCssSize(height) ?? 160,
-    };
+  const compositionValue = useMemo<ChartCompositionValue>(
+    () => ({
+      data,
+      config: mergedConfig,
+      pixel,
+      fill,
+      loading,
+      valueFormatter: valueFormatter as ((value: number, key: string) => string) | undefined,
+      title,
+      categories,
+      indexKey,
+      series: collected.series,
+    }),
+    [
+      data,
+      mergedConfig,
+      pixel,
+      fill,
+      loading,
+      valueFormatter,
+      title,
+      categories,
+      indexKey,
+      collected.series,
+    ],
+  );
 
+  if (!loading && data.length === 0) {
     return (
-      <div
-        className={['dune-chart-container', 'dune-chart-empty', className]
-          .filter(Boolean)
-          .join(' ')}
-        style={emptyStyle}
-        role="status"
-        aria-labelledby={emptyTitleId}
-        aria-describedby={[emptyDescId, emptyMessageId].filter(Boolean).join(' ') || undefined}
-      >
-        {title ? (
-          <span id={emptyTitleId} className="dune-sr-only">
-            {title}
-          </span>
-        ) : null}
-        {description ? (
-          <span id={emptyDescId} className="dune-sr-only">
-            {description}
-          </span>
-        ) : null}
-        <p id={emptyMessageId} className="dune-chart-empty__message">
-          {emptyMessage}
-        </p>
-      </div>
+      <ChartEmptyState
+        className={className}
+        style={seriesStyle}
+        height={height}
+        title={title}
+        description={description}
+        emptyMessage={emptyMessage}
+      />
     );
   }
 
   if (loading) {
-    const loadingStyle: CSSProperties = {
-      ...seriesStyle,
-      height: toCssSize(height),
-      minHeight: toCssSize(height) ?? 160,
-      position: 'relative',
-    };
-
     return (
-      <div
-        ref={containerRef}
-        className={['dune-chart-container', 'dune-chart-loading-shell', className]
-          .filter(Boolean)
-          .join(' ')}
-        style={loadingStyle}
-        role="status"
-        aria-busy="true"
-        aria-live="polite"
-      >
-        <ResponsiveContainer width="100%" height="100%">
-          <RadarChart
-            data={loadingRows}
-            margin={{ top: 16, right: 24, left: 24, bottom: 8 }}
-            accessibilityLayer={false}
-          >
-            <PolarAngleAxis dataKey={LOADING_RADAR_INDEX_KEY} tick={false} axisLine={false} />
-            <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} tickLine={false} />
+      <ChartCompositionProvider value={compositionValue}>
+        <ChartLoadingShell
+          className={className}
+          style={seriesStyle}
+          height={height}
+          badge={<DuneChartLoadingBadge message={loadingMessage} indicator={loadingIndicator} />}
+        >
+          <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart
+                data={loadingRows}
+                margin={{ top: 16, right: 24, left: 24, bottom: 8 }}
+                accessibilityLayer={false}
+              >
+                <PolarAngleAxis dataKey={LOADING_RADAR_INDEX_KEY} tick={false} axisLine={false} />
+                <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} tickLine={false} />
 
-            <PixelRadarPlotLayer
-              series={loadingSeries}
-              pointCount={loadingRows.length}
-              pixel={pixel}
-              fill="dither"
-              domainMax={100}
-              shimmer={!prefersReducedMotion}
-            />
+                <PixelRadarPlotLayer
+                  series={loadingSeries}
+                  pointCount={loadingRows.length}
+                  pixel={pixel}
+                  fill="dither"
+                  domainMax={100}
+                  shimmer={!prefersReducedMotion}
+                />
 
-            <Radar
-              dataKey={LOADING_RADAR_VALUE_KEY}
-              stroke="none"
-              fill="transparent"
-              fillOpacity={0}
-              dot={false}
-              activeDot={false}
-              isAnimationActive={false}
-              legendType="none"
-            />
-          </RadarChart>
-        </ResponsiveContainer>
-
-        <DuneChartLoadingBadge message={loadingMessage} indicator={loadingIndicator} />
-      </div>
+                <RechartsRadar
+                  dataKey={LOADING_RADAR_VALUE_KEY}
+                  stroke="none"
+                  fill="transparent"
+                  fillOpacity={0}
+                  dot={false}
+                  activeDot={false}
+                  isAnimationActive={false}
+                  legendType="none"
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartLoadingShell>
+      </ChartCompositionProvider>
     );
   }
-
-  const renderTooltip = ({ active, payload, label }: TooltipContentProps) => {
-    if (!active || payload == null || payload.length === 0) return null;
-
-    return (
-      <div className="dune-tooltip" role="status" aria-live="polite">
-        {label != null ? <div className="dune-tooltip__label">{String(label)}</div> : null}
-        <ul className="dune-tooltip__list">
-          {payload.map((entry) => {
-            const key = String(entry.dataKey ?? entry.name ?? '');
-            const seriesKey = categories.find((category) => category === key);
-            const raw = entry.value;
-            const numeric = typeof raw === 'number' ? raw : Number(raw);
-            const formatted =
-              valueFormatter && seriesKey != null && Number.isFinite(numeric)
-                ? valueFormatter(numeric, seriesKey)
-                : String(raw ?? '');
-            const name =
-              (seriesKey != null ? config?.[seriesKey]?.label : undefined) ?? entry.name ?? key;
-            const color = seriesColorForKey(categories, key) ?? entry.color;
-
-            return (
-              <li key={key} className="dune-tooltip__item" style={{ color }}>
-                <span className="dune-tooltip__name">{name}</span>
-                <span className="dune-tooltip__value">{formatted}</span>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-    );
-  };
 
   const { accessibilityLayer: chartAccessibilityLayer = true, ...restChartProps } =
     chartProps ?? {};
 
   return (
-    <DuneChartContainer
-      ref={containerRef}
+    <ChartCompositionProvider value={compositionValue}>
+      <DuneChartContainer
+        ref={containerRef}
+        className={className}
+        style={seriesStyle}
+        height={height}
+        title={title}
+        description={description}
+        initialDimension={{ width: 640, height: typeof height === 'number' ? height : 320 }}
+      >
+        <RadarChart
+          data={[...data]}
+          margin={{ top: 16, right: 24, left: 24, bottom: 8 }}
+          accessibilityLayer={chartAccessibilityLayer}
+          {...restChartProps}
+        >
+          {paintsReady ? (
+            <PixelRadarPlotLayer
+              series={radarSeries}
+              pointCount={data.length}
+              pixel={pixel}
+              fill={fill}
+            />
+          ) : null}
+
+          {rewriteRadarSeriesChildren(children, categories, mergedConfig, prefersReducedMotion)}
+        </RadarChart>
+      </DuneChartContainer>
+    </ChartCompositionProvider>
+  );
+}
+
+function rewriteRadarSeriesChildren(
+  children: ReactNode,
+  categories: readonly string[],
+  config: Partial<Record<string, DuneSeriesConfig>>,
+  prefersReducedMotion: boolean,
+): ReactNode {
+  return Children.map(children, (child) => {
+    if (!isValidElement(child)) return child;
+    const props = child.props as Record<string, unknown>;
+    const meta = readPartMetaFromType(child.type, props);
+    if (meta?.part === 'series' && meta.kind === 'radar') {
+      const dataKey = asDataKeyString(props.dataKey);
+      const i = categories.indexOf(dataKey);
+      const color = i >= 0 ? getSeriesVar(i) : 'transparent';
+      return cloneElement(child as ReactElement<Record<string, unknown>>, {
+        name: config[dataKey]?.label ?? dataKey,
+        stroke: color,
+        fill: color,
+        strokeOpacity: 0,
+        fillOpacity: 0,
+        isAnimationActive: !prefersReducedMotion,
+      });
+    }
+    return child;
+  });
+}
+
+function isLegacyRadarProps<T extends Record<string, unknown>>(
+  props: DuneRadarChartRootProps<T> | DuneRadarChartProps<T>,
+): props is DuneRadarChartProps<T> {
+  return 'categories' in props && Array.isArray(props.categories);
+}
+
+function DuneRadarChartLegacy<T extends Record<string, unknown>>(props: DuneRadarChartProps<T>) {
+  const {
+    data,
+    categories,
+    index,
+    config,
+    fill,
+    pixel,
+    className,
+    height,
+    title,
+    description,
+    emptyMessage,
+    loading,
+    loadingMessage,
+    loadingIndicator,
+    valueFormatter,
+    chartProps,
+    seriesProps,
+    polarAngleAxisProps,
+    polarRadiusAxisProps,
+    polarGridProps,
+    tooltipProps,
+    legendProps,
+    children,
+  } = props;
+
+  return (
+    <DuneRadarChartRoot
+      data={data}
+      config={config}
+      fill={fill}
+      pixel={pixel}
       className={className}
-      style={seriesStyle}
       height={height}
       title={title}
       description={description}
-      initialDimension={{ width: 640, height: typeof height === 'number' ? height : 320 }}
+      emptyMessage={emptyMessage}
+      loading={loading}
+      loadingMessage={loadingMessage}
+      loadingIndicator={loadingIndicator}
+      valueFormatter={valueFormatter}
+      chartProps={chartProps}
     >
-      <RadarChart
-        data={[...data]}
-        margin={{ top: 16, right: 24, left: 24, bottom: 8 }}
-        accessibilityLayer={chartAccessibilityLayer}
-        {...restChartProps}
-      >
-        <PolarGrid
-          stroke="var(--dune-grid)"
-          strokeWidth={1}
-          gridType="polygon"
-          {...polarGridProps}
-        />
-        <PolarAngleAxis
-          dataKey={index}
-          tick={{ fill: 'var(--dune-muted-text)', fontSize: 11 }}
-          {...polarAngleAxisProps}
-        />
-        <PolarRadiusAxis
-          stroke="var(--dune-tick)"
-          tick={{ fill: 'var(--dune-muted-text)', fontSize: 10 }}
-          axisLine={false}
-          {...polarRadiusAxisProps}
-        />
-
-        {paintsReady ? (
-          <PixelRadarPlotLayer
-            series={radarSeries}
-            pointCount={data.length}
-            pixel={pixel}
-            fill={fill}
-          />
-        ) : null}
-
-        <Tooltip cursor={false} content={renderTooltip} {...tooltipProps} />
-        <Legend
-          iconType="square"
-          iconSize={10}
-          aria-label={title ? `${title} legend` : 'Chart legend'}
-          formatter={(value, entry) => {
-            const key = String(entry.dataKey ?? value);
-            const seriesKey = categories.find((category) => category === key);
-            return (seriesKey != null ? config?.[seriesKey]?.label : undefined) ?? value;
-          }}
-          {...legendProps}
-          wrapperStyle={{
-            color: 'var(--dune-muted-text)',
-            fontSize: 11,
-            paddingTop: 8,
-            ...legendProps?.wrapperStyle,
-          }}
-        />
-
-        {categories.map((key, i) => {
-          const color = getSeriesVar(i);
-          return (
-            <Radar
-              key={key}
-              dataKey={key}
-              name={config?.[key]?.label ?? key}
-              stroke={color}
-              strokeOpacity={0}
-              fill={color}
-              fillOpacity={0}
-              dot={false}
-              activeDot={false}
-              isAnimationActive={!prefersReducedMotion}
-              animationDuration={DUNE_DURATION}
-              animationEasing={DUNE_EASE}
-              legendType="square"
-              {...seriesProps?.[key]}
-            />
-          );
-        })}
-
-        {children}
-      </RadarChart>
-    </DuneChartContainer>
+      <DunePolarGrid {...polarGridProps} />
+      <DunePolarAngleAxis dataKey={index} {...polarAngleAxisProps} />
+      <DunePolarRadiusAxis {...polarRadiusAxisProps} />
+      <DuneTooltip cursor={false} {...tooltipProps} />
+      <DuneLegend {...legendProps} />
+      {categories.map((key) => {
+        const { fill: _rechartsFill, ...seriesRest } = (seriesProps?.[key] ??
+          {}) as DuneRadarSeriesPassThrough & { fill?: string };
+        return <Radar key={key} dataKey={key} {...seriesRest} />;
+      })}
+      {children}
+    </DuneRadarChartRoot>
   );
 }
+
+function DuneRadarChartInner<T extends Record<string, unknown>>(
+  props: DuneRadarChartRootProps<T> | DuneRadarChartProps<T>,
+) {
+  if (isLegacyRadarProps(props)) {
+    return <DuneRadarChartLegacy {...props} />;
+  }
+  return <DuneRadarChartRoot {...props} />;
+}
+
+export const DuneRadarChart = Object.assign(DuneRadarChartInner, {
+  PolarGrid: DunePolarGrid,
+  PolarAngleAxis: DunePolarAngleAxis,
+  PolarRadiusAxis: DunePolarRadiusAxis,
+  Tooltip: DuneTooltip,
+  Legend: DuneLegend,
+  Radar: Radar,
+}) as typeof DuneRadarChartInner & {
+  PolarGrid: typeof DunePolarGrid;
+  PolarAngleAxis: typeof DunePolarAngleAxis;
+  PolarRadiusAxis: typeof DunePolarRadiusAxis;
+  Tooltip: typeof DuneTooltip;
+  Legend: typeof DuneLegend;
+  Radar: typeof Radar;
+};
+
+export type { PixelWaveBands };

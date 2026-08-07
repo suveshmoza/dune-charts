@@ -1,20 +1,34 @@
-import { useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
-  CartesianGrid,
-  Legend,
-  Line,
+  Children,
+  cloneElement,
+  isValidElement,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
+import {
+  Line as RechartsLine,
   LineChart,
   ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
-  type TooltipContentProps,
+  type LineProps,
 } from 'recharts';
 
 import { DuneChartContainer } from '../../primitives/DuneChartContainer';
+import type { DuneChartSize } from '../../primitives/DuneChartContainer';
 import { DEFAULT_LOADING_MESSAGE, DuneChartLoadingBadge } from '../../primitives/DuneChartLoading';
 import { useDuneTheme } from '../../provider/DuneChartProvider';
-import type { DuneLineChartProps } from '../../types';
+import type {
+  DataKey,
+  DuneLineChartPassThrough,
+  DuneLineChartProps,
+  DuneLineSeriesPassThrough,
+  DuneSeriesConfig,
+} from '../../types';
 import { usePrefersReducedMotion } from '../../utils/reducedMotion';
 import {
   buildSeriesStyle,
@@ -24,41 +38,109 @@ import {
 } from '../../utils/series';
 import { buildSeriesList } from '../shared/buildSeriesList';
 import {
+  DuneCartesianGrid,
+  DuneLegend,
+  DuneTooltip,
+  DuneXAxis,
+  DuneYAxis,
+} from '../shared/cartesianParts';
+import {
   buildLoadingAreaRows,
   buildLoadingAreaSeriesFromRows,
   DEFAULT_LOADING_AREA_COUNT,
   LOADING_AREA_INDEX_KEY,
   LOADING_AREA_VALUE_KEY,
 } from '../shared/chartLoadingBars';
+import {
+  ChartEmptyState,
+  ChartLoadingShell,
+  DEFAULT_EMPTY_MESSAGE,
+  DEFAULT_PIXEL,
+  DUNE_DURATION,
+  DUNE_EASE,
+  clampPixel,
+} from '../shared/chartShell';
+import {
+  asDataKeyString,
+  ChartCompositionProvider,
+  collectChartParts,
+  markDunePart,
+  mergeSeriesConfig,
+  readPartMetaFromType,
+  seriesPropsFromRegistry,
+  type ChartCompositionValue,
+} from '../shared/composition';
+import type { PixelWaveBands } from '../shared/pixelWaveEngine';
 import { PixelLinePlotLayer } from './PixelLinePlotLayer';
 
 export type { DuneLineChartProps };
 
-const DUNE_EASE = 'ease-out';
-const DUNE_DURATION = 520;
-const DEFAULT_PIXEL = 2;
-const DEFAULT_EMPTY_MESSAGE = 'No data to display';
+export type DuneLineChartLineProps = Omit<LineProps<unknown, unknown>, 'data' | 'name'> & {
+  dataKey: string;
+  color?: string;
+  bands?: PixelWaveBands;
+};
 
-function clampPixel(pixel: number | undefined): number {
-  if (pixel == null || !Number.isFinite(pixel)) return DEFAULT_PIXEL;
-  return Math.max(1, Math.floor(pixel));
-}
+const Line = markDunePart(
+  function Line({
+    dataKey,
+    color: _color,
+    bands: _bands,
+    type = 'stepAfter',
+    strokeOpacity = 0,
+    strokeWidth = 2,
+    dot = false,
+    activeDot = false,
+    legendType = 'square',
+    ...rest
+  }: DuneLineChartLineProps) {
+    const prefersReducedMotion = usePrefersReducedMotion();
+    return (
+      <RechartsLine
+        type={type}
+        dataKey={dataKey}
+        name={dataKey}
+        stroke="transparent"
+        strokeOpacity={strokeOpacity}
+        strokeWidth={strokeWidth}
+        dot={dot}
+        activeDot={activeDot}
+        animationDuration={DUNE_DURATION}
+        animationEasing={DUNE_EASE}
+        isAnimationActive={!prefersReducedMotion}
+        legendType={legendType}
+        {...rest}
+      />
+    );
+  },
+  (props) => ({
+    part: 'series',
+    kind: 'line',
+    dataKey: props.dataKey,
+    color: props.color,
+    bands: props.bands,
+  }),
+);
 
-function toCssSize(value: number | string | undefined): string | undefined {
-  if (value == null) return undefined;
-  return typeof value === 'number' ? `${value}px` : value;
-}
+export type DuneLineChartRootProps<T extends Record<string, unknown>> = {
+  data: readonly T[];
+  config?: Partial<Record<DataKey<T>, DuneSeriesConfig>>;
+  pixel?: number;
+  className?: string;
+  height?: DuneChartSize;
+  title?: string;
+  description?: string;
+  emptyMessage?: string;
+  loading?: boolean;
+  loadingMessage?: string;
+  loadingIndicator?: ReactNode;
+  valueFormatter?: (value: number, key: DataKey<T>) => string;
+  chartProps?: DuneLineChartPassThrough;
+  children?: ReactNode;
+};
 
-function seriesColorForKey(categories: readonly string[], key: string): string | undefined {
-  const seriesIndex = categories.findIndex((category) => category === key);
-  if (seriesIndex < 0) return undefined;
-  return getSeriesVar(seriesIndex);
-}
-
-export function DuneLineChart<T extends Record<string, unknown>>({
+function DuneLineChartRoot<T extends Record<string, unknown>>({
   data,
-  categories,
-  index,
   config,
   pixel: pixelProp,
   className,
@@ -71,24 +153,31 @@ export function DuneLineChart<T extends Record<string, unknown>>({
   loadingIndicator,
   valueFormatter,
   chartProps,
-  seriesProps,
-  xAxisProps,
-  yAxisProps,
-  tooltipProps,
-  legendProps,
   children,
-}: DuneLineChartProps<T>) {
+}: DuneLineChartRootProps<T>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
-  const pixel = clampPixel(pixelProp);
+  const pixel = clampPixel(pixelProp, DEFAULT_PIXEL);
   const { theme } = useDuneTheme();
-  const seriesStyle = buildSeriesStyle(categories, config);
+
+  const collected = useMemo(() => collectChartParts(children), [children]);
+  const categories = useMemo(
+    () => collected.series.map((entry) => entry.dataKey),
+    [collected.series],
+  );
+  const indexKey = collected.indexKey;
+  const mergedConfig = useMemo(
+    () => mergeSeriesConfig(config as Partial<Record<string, DuneSeriesConfig>>, collected.series),
+    [config, collected.series],
+  );
+  const seriesPropMap = useMemo(
+    () => seriesPropsFromRegistry(collected.series),
+    [collected.series],
+  );
+
+  const seriesStyle = buildSeriesStyle(categories, mergedConfig);
   const [baseColors, setBaseColors] = useState<string[]>([]);
   const [trackColor, setTrackColor] = useState('#d9d3c8');
-  const emptyId = useId();
-  const emptyTitleId = title ? `${emptyId}-title` : undefined;
-  const emptyDescId = description ? `${emptyId}-description` : undefined;
-  const emptyMessageId = `${emptyId}-message`;
 
   useLayoutEffect(() => {
     const host = containerRef.current;
@@ -99,14 +188,25 @@ export function DuneLineChart<T extends Record<string, unknown>>({
       return;
     }
     setBaseColors(resolveSeriesBaseColors(host, categories.length));
-  }, [categories, config, theme, loading]);
+  }, [categories, mergedConfig, theme, loading]);
 
   const lineSeries = useMemo(
-    () => buildSeriesList(data, categories, config, baseColors, undefined, undefined),
-    [data, categories, config, baseColors],
+    () =>
+      buildSeriesList(
+        data,
+        categories as DataKey<T>[],
+        mergedConfig as Partial<Record<DataKey<T>, DuneSeriesConfig>>,
+        baseColors,
+        seriesPropMap as Partial<Record<DataKey<T>, { stackId?: string | number }>>,
+        undefined,
+      ),
+    [data, categories, mergedConfig, baseColors, seriesPropMap],
   );
-  const paintsReady = baseColors.length === categories.length;
-  const indexValues = useMemo(() => data.map((row) => row[index]), [data, index]);
+  const paintsReady = categories.length > 0 && baseColors.length === categories.length;
+  const indexValues = useMemo(() => {
+    if (indexKey == null) return data.map((_, i) => i);
+    return data.map((row) => row[indexKey as DataKey<T>]);
+  }, [data, indexKey]);
 
   const loadingPointCount = useMemo(() => {
     if (data.length > 0) return Math.max(8, Math.min(24, data.length));
@@ -123,228 +223,236 @@ export function DuneLineChart<T extends Record<string, unknown>>({
     [loadingRows],
   );
 
-  if (!loading && data.length === 0) {
-    const emptyStyle: CSSProperties = {
-      ...seriesStyle,
-      height: toCssSize(height),
-      minHeight: toCssSize(height) ?? 160,
-    };
+  const compositionValue = useMemo<ChartCompositionValue>(
+    () => ({
+      data,
+      config: mergedConfig,
+      pixel,
+      fill: 'bands',
+      loading,
+      valueFormatter: valueFormatter as ((value: number, key: string) => string) | undefined,
+      title,
+      categories,
+      indexKey,
+      series: collected.series,
+    }),
+    [
+      data,
+      mergedConfig,
+      pixel,
+      loading,
+      valueFormatter,
+      title,
+      categories,
+      indexKey,
+      collected.series,
+    ],
+  );
 
+  if (!loading && data.length === 0) {
     return (
-      <div
-        className={['dune-chart-container', 'dune-chart-empty', className]
-          .filter(Boolean)
-          .join(' ')}
-        style={emptyStyle}
-        role="status"
-        aria-labelledby={emptyTitleId}
-        aria-describedby={[emptyDescId, emptyMessageId].filter(Boolean).join(' ') || undefined}
-      >
-        {title ? (
-          <span id={emptyTitleId} className="dune-sr-only">
-            {title}
-          </span>
-        ) : null}
-        {description ? (
-          <span id={emptyDescId} className="dune-sr-only">
-            {description}
-          </span>
-        ) : null}
-        <p id={emptyMessageId} className="dune-chart-empty__message">
-          {emptyMessage}
-        </p>
-      </div>
+      <ChartEmptyState
+        className={className}
+        style={seriesStyle}
+        height={height}
+        title={title}
+        description={description}
+        emptyMessage={emptyMessage}
+      />
     );
   }
 
   if (loading) {
-    const loadingStyle: CSSProperties = {
-      ...seriesStyle,
-      height: toCssSize(height),
-      minHeight: toCssSize(height) ?? 160,
-      position: 'relative',
-    };
-
     return (
-      <div
-        ref={containerRef}
-        className={['dune-chart-container', 'dune-chart-loading-shell', className]
-          .filter(Boolean)
-          .join(' ')}
-        style={loadingStyle}
-        role="status"
-        aria-busy="true"
-        aria-live="polite"
-      >
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={loadingRows}
-            margin={{ top: 12, right: 16, left: 4, bottom: 4 }}
-            accessibilityLayer={false}
-          >
-            <XAxis dataKey={LOADING_AREA_INDEX_KEY} hide />
-            <YAxis hide domain={[0, 100]} width={0} />
-
-            <PixelLinePlotLayer
-              series={loadingSeries}
-              pointCount={loadingRows.length}
-              indexValues={loadingIndexValues}
-              pixel={pixel}
-              shimmer={!prefersReducedMotion}
-            />
-
-            <Line
-              type="stepAfter"
-              dataKey={LOADING_AREA_VALUE_KEY}
-              stroke="transparent"
-              strokeOpacity={0}
-              strokeWidth={2}
-              dot={false}
-              activeDot={false}
-              isAnimationActive={false}
-              legendType="none"
-              tooltipType="none"
-            />
-          </LineChart>
-        </ResponsiveContainer>
-
-        <DuneChartLoadingBadge message={loadingMessage} indicator={loadingIndicator} />
-      </div>
+      <ChartCompositionProvider value={compositionValue}>
+        <ChartLoadingShell
+          className={className}
+          style={seriesStyle}
+          height={height}
+          badge={<DuneChartLoadingBadge message={loadingMessage} indicator={loadingIndicator} />}
+        >
+          <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={loadingRows}
+                margin={{ top: 12, right: 16, left: 4, bottom: 4 }}
+                accessibilityLayer={false}
+              >
+                <XAxis dataKey={LOADING_AREA_INDEX_KEY} hide />
+                <YAxis hide domain={[0, 100]} width={0} />
+                <PixelLinePlotLayer
+                  series={loadingSeries}
+                  pointCount={loadingRows.length}
+                  indexValues={loadingIndexValues}
+                  pixel={pixel}
+                  shimmer={!prefersReducedMotion}
+                />
+                <RechartsLine
+                  type="stepAfter"
+                  dataKey={LOADING_AREA_VALUE_KEY}
+                  stroke="transparent"
+                  strokeOpacity={0}
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={false}
+                  isAnimationActive={false}
+                  legendType="none"
+                  tooltipType="none"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartLoadingShell>
+      </ChartCompositionProvider>
     );
   }
-
-  const renderTooltip = ({ active, payload, label }: TooltipContentProps) => {
-    if (!active || payload == null || payload.length === 0) return null;
-
-    return (
-      <div className="dune-tooltip" role="status" aria-live="polite">
-        {label != null ? <div className="dune-tooltip__label">{String(label)}</div> : null}
-        <ul className="dune-tooltip__list">
-          {payload.map((entry) => {
-            const key = String(entry.dataKey ?? entry.name ?? '');
-            const seriesKey = categories.find((category) => category === key);
-            const raw = entry.value;
-            const numeric = typeof raw === 'number' ? raw : Number(raw);
-            const formatted =
-              valueFormatter && seriesKey != null && Number.isFinite(numeric)
-                ? valueFormatter(numeric, seriesKey)
-                : String(raw ?? '');
-            const name =
-              (seriesKey != null ? config?.[seriesKey]?.label : undefined) ?? entry.name ?? key;
-            const color = seriesColorForKey(categories, key) ?? entry.color;
-
-            return (
-              <li key={key} className="dune-tooltip__item" style={{ color }}>
-                <span className="dune-tooltip__name">{name}</span>
-                <span className="dune-tooltip__value">{formatted}</span>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-    );
-  };
 
   const { accessibilityLayer: chartAccessibilityLayer = true, ...restChartProps } =
     chartProps ?? {};
 
   return (
-    <DuneChartContainer
-      ref={containerRef}
+    <ChartCompositionProvider value={compositionValue}>
+      <DuneChartContainer
+        ref={containerRef}
+        className={className}
+        style={seriesStyle}
+        height={height}
+        title={title}
+        description={description}
+        initialDimension={{ width: 640, height: typeof height === 'number' ? height : 320 }}
+      >
+        <LineChart
+          data={[...data]}
+          margin={{ top: 12, right: 16, left: 4, bottom: 4 }}
+          accessibilityLayer={chartAccessibilityLayer}
+          {...restChartProps}
+        >
+          {paintsReady ? (
+            <PixelLinePlotLayer
+              series={lineSeries}
+              pointCount={data.length}
+              indexValues={indexValues}
+              pixel={pixel}
+            />
+          ) : null}
+
+          {rewriteLineSeriesChildren(children, categories, mergedConfig, prefersReducedMotion)}
+        </LineChart>
+      </DuneChartContainer>
+    </ChartCompositionProvider>
+  );
+}
+
+function rewriteLineSeriesChildren(
+  children: ReactNode,
+  categories: readonly string[],
+  config: Partial<Record<string, DuneSeriesConfig>>,
+  prefersReducedMotion: boolean,
+): ReactNode {
+  return Children.map(children, (child) => {
+    if (!isValidElement(child)) return child;
+    const props = child.props as Record<string, unknown>;
+    const meta = readPartMetaFromType(child.type, props);
+    if (meta?.part === 'series' && meta.kind === 'line') {
+      const dataKey = asDataKeyString(props.dataKey);
+      const i = categories.indexOf(dataKey);
+      const color = i >= 0 ? getSeriesVar(i) : 'transparent';
+      return cloneElement(child as ReactElement<Record<string, unknown>>, {
+        name: config[dataKey]?.label ?? dataKey,
+        stroke: color,
+        strokeOpacity: 0,
+        isAnimationActive: !prefersReducedMotion,
+      });
+    }
+    return child;
+  });
+}
+
+function isLegacyLineProps<T extends Record<string, unknown>>(
+  props: DuneLineChartRootProps<T> | DuneLineChartProps<T>,
+): props is DuneLineChartProps<T> {
+  return 'categories' in props && Array.isArray(props.categories);
+}
+
+function DuneLineChartLegacy<T extends Record<string, unknown>>(props: DuneLineChartProps<T>) {
+  const {
+    data,
+    categories,
+    index,
+    config,
+    pixel,
+    className,
+    height,
+    title,
+    description,
+    emptyMessage,
+    loading,
+    loadingMessage,
+    loadingIndicator,
+    valueFormatter,
+    chartProps,
+    seriesProps,
+    xAxisProps,
+    yAxisProps,
+    tooltipProps,
+    legendProps,
+    children,
+  } = props;
+
+  return (
+    <DuneLineChartRoot
+      data={data}
+      config={config}
+      pixel={pixel}
       className={className}
-      style={seriesStyle}
       height={height}
       title={title}
       description={description}
-      initialDimension={{ width: 640, height: typeof height === 'number' ? height : 320 }}
+      emptyMessage={emptyMessage}
+      loading={loading}
+      loadingMessage={loadingMessage}
+      loadingIndicator={loadingIndicator}
+      valueFormatter={valueFormatter}
+      chartProps={chartProps}
     >
-      <LineChart
-        data={[...data]}
-        margin={{ top: 12, right: 16, left: 4, bottom: 4 }}
-        accessibilityLayer={chartAccessibilityLayer}
-        {...restChartProps}
-      >
-        <CartesianGrid
-          stroke="var(--dune-grid)"
-          strokeWidth={1}
-          vertical={false}
-          horizontal={false}
-        />
-        <XAxis
-          dataKey={index}
-          stroke="var(--dune-tick)"
-          tick={{ fill: 'var(--dune-muted-text)', fontSize: 11 }}
-          tickLine={false}
-          axisLine={{ stroke: 'var(--dune-border)', strokeWidth: 2 }}
-          dy={4}
-          {...xAxisProps}
-        />
-        <YAxis
-          stroke="var(--dune-tick)"
-          tick={{ fill: 'var(--dune-muted-text)', fontSize: 11 }}
-          tickLine={false}
-          axisLine={false}
-          width={36}
-          domain={[0, 'auto']}
-          {...yAxisProps}
-        />
-
-        {paintsReady ? (
-          <PixelLinePlotLayer
-            series={lineSeries}
-            pointCount={data.length}
-            indexValues={indexValues}
-            pixel={pixel}
-          />
-        ) : null}
-
-        <Tooltip
-          cursor={{ stroke: 'var(--dune-ink)', strokeWidth: 1, strokeDasharray: '4 4' }}
-          content={renderTooltip}
-          {...tooltipProps}
-        />
-        <Legend
-          iconType="square"
-          iconSize={10}
-          aria-label={title ? `${title} legend` : 'Chart legend'}
-          formatter={(value, entry) => {
-            const key = String(entry.dataKey ?? value);
-            const seriesKey = categories.find((category) => category === key);
-            return (seriesKey != null ? config?.[seriesKey]?.label : undefined) ?? value;
-          }}
-          {...legendProps}
-          wrapperStyle={{
-            color: 'var(--dune-muted-text)',
-            fontSize: 11,
-            paddingTop: 8,
-            ...legendProps?.wrapperStyle,
-          }}
-        />
-
-        {categories.map((key, i) => {
-          const color = getSeriesVar(i);
-          return (
-            <Line
-              key={key}
-              dataKey={key}
-              name={config?.[key]?.label ?? key}
-              type="stepAfter"
-              stroke={color}
-              strokeOpacity={0}
-              strokeWidth={2}
-              dot={false}
-              activeDot={false}
-              animationDuration={DUNE_DURATION}
-              animationEasing={DUNE_EASE}
-              isAnimationActive={!prefersReducedMotion}
-              legendType="square"
-              {...seriesProps?.[key]}
-            />
-          );
-        })}
-
-        {children}
-      </LineChart>
-    </DuneChartContainer>
+      <DuneCartesianGrid />
+      <DuneXAxis dataKey={index} {...xAxisProps} />
+      <DuneYAxis {...yAxisProps} />
+      <DuneTooltip {...tooltipProps} />
+      <DuneLegend {...legendProps} />
+      {categories.map((key) => {
+        const { fill: _rechartsFill, ...seriesRest } = (seriesProps?.[key] ??
+          {}) as DuneLineSeriesPassThrough & { fill?: string };
+        return <Line key={key} dataKey={key} {...seriesRest} />;
+      })}
+      {children}
+    </DuneLineChartRoot>
   );
 }
+
+function DuneLineChartInner<T extends Record<string, unknown>>(
+  props: DuneLineChartRootProps<T> | DuneLineChartProps<T>,
+) {
+  if (isLegacyLineProps(props)) {
+    return <DuneLineChartLegacy {...props} />;
+  }
+  return <DuneLineChartRoot {...props} />;
+}
+
+export const DuneLineChart = Object.assign(DuneLineChartInner, {
+  Grid: DuneCartesianGrid,
+  XAxis: DuneXAxis,
+  YAxis: DuneYAxis,
+  Tooltip: DuneTooltip,
+  Legend: DuneLegend,
+  Line: Line,
+}) as typeof DuneLineChartInner & {
+  Grid: typeof DuneCartesianGrid;
+  XAxis: typeof DuneXAxis;
+  YAxis: typeof DuneYAxis;
+  Tooltip: typeof DuneTooltip;
+  Legend: typeof DuneLegend;
+  Line: typeof Line;
+};
+
+export type { PixelWaveBands };

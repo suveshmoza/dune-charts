@@ -80,20 +80,6 @@ const PIXEL_SIZES = [
   { id: '8', label: '8px' },
 ] as const;
 
-const stackProps = {
-  melange: { stackId: 'ops' },
-  water: { stackId: 'ops' },
-  thrift: { stackId: 'ops' },
-  wind: { stackId: 'ops' },
-  silica: { stackId: 'ops' },
-} satisfies Record<(typeof THROUGHPUT_KEYS)[number], { stackId: string }>;
-
-const expandStackProps = {
-  melange: { stackId: 'share' },
-  water: { stackId: 'share' },
-  thrift: { stackId: 'share' },
-} satisfies Record<'melange' | 'water' | 'thrift', { stackId: string }>;
-
 type PlaygroundControls = {
   fill: PixelWaveFill;
   pixel: number;
@@ -151,10 +137,8 @@ function ChartCanvas({ chart, controls }: { chart: ChartId; controls: Playground
     case 'area':
       if (variant === 'stacked') {
         return (
-          <DuneAreaChart<ThroughputRow>
+          <DuneAreaChart
             data={data}
-            index="month"
-            categories={[...THROUGHPUT_KEYS]}
             config={throughputConfig}
             fill={fill}
             pixel={pixel}
@@ -162,17 +146,23 @@ function ChartCanvas({ chart, controls }: { chart: ChartId; controls: Playground
             height={height}
             title="Stacked area"
             description="All series share one stack."
-            seriesProps={stackProps}
             valueFormatter={(value) => String(value)}
-          />
+          >
+            <DuneAreaChart.Grid />
+            <DuneAreaChart.XAxis dataKey="month" />
+            <DuneAreaChart.YAxis />
+            <DuneAreaChart.Tooltip />
+            <DuneAreaChart.Legend />
+            {THROUGHPUT_KEYS.map((key) => (
+              <DuneAreaChart.Area key={key} dataKey={key} stackId="ops" />
+            ))}
+          </DuneAreaChart>
         );
       }
       if (variant === 'expand') {
         return (
-          <DuneAreaChart<ThroughputRow>
+          <DuneAreaChart
             data={data}
-            index="month"
-            categories={['melange', 'water', 'thrift']}
             config={throughputConfig}
             fill={fill}
             pixel={pixel}
@@ -180,20 +170,23 @@ function ChartCanvas({ chart, controls }: { chart: ChartId; controls: Playground
             height={height}
             title="100% stacked area"
             description="Each month expands to full height."
-            seriesProps={expandStackProps}
             chartProps={{ stackOffset: 'expand' }}
-            yAxisProps={{
-              tickFormatter: (value: number) => `${Math.round(value * 100)}%`,
-            }}
             valueFormatter={(value) => `${Math.round(value * 100)}%`}
-          />
+          >
+            <DuneAreaChart.Grid />
+            <DuneAreaChart.XAxis dataKey="month" />
+            <DuneAreaChart.YAxis tickFormatter={(value: number) => `${Math.round(value * 100)}%`} />
+            <DuneAreaChart.Tooltip />
+            <DuneAreaChart.Legend />
+            <DuneAreaChart.Area dataKey="melange" stackId="share" />
+            <DuneAreaChart.Area dataKey="water" stackId="share" />
+            <DuneAreaChart.Area dataKey="thrift" stackId="share" />
+          </DuneAreaChart>
         );
       }
       return (
-        <DuneAreaChart<ThroughputRow>
+        <DuneAreaChart
           data={data}
-          index="month"
-          categories={['melange']}
           config={throughputConfig}
           fill={fill}
           pixel={pixel}
@@ -202,16 +195,21 @@ function ChartCanvas({ chart, controls }: { chart: ChartId; controls: Playground
           title="Simple area"
           description="Single-series melange area."
           valueFormatter={(value) => String(value)}
-        />
+        >
+          <DuneAreaChart.Grid />
+          <DuneAreaChart.XAxis dataKey="month" />
+          <DuneAreaChart.YAxis />
+          <DuneAreaChart.Tooltip />
+          <DuneAreaChart.Legend />
+          <DuneAreaChart.Area dataKey="melange" />
+        </DuneAreaChart>
       );
 
     case 'bar':
       if (variant === 'stacked') {
         return (
-          <DuneBarChart<ThroughputRow>
+          <DuneBarChart
             data={data}
-            index="month"
-            categories={[...THROUGHPUT_KEYS]}
             config={throughputConfig}
             fill={fill}
             pixel={pixel}
@@ -219,17 +217,23 @@ function ChartCanvas({ chart, controls }: { chart: ChartId; controls: Playground
             height={height}
             title="Stacked bars"
             description="Stacked pixel bars."
-            seriesProps={stackProps}
             valueFormatter={(value) => String(value)}
-          />
+          >
+            <DuneBarChart.Grid />
+            <DuneBarChart.XAxis dataKey="month" />
+            <DuneBarChart.YAxis />
+            <DuneBarChart.Tooltip />
+            <DuneBarChart.Legend />
+            {THROUGHPUT_KEYS.map((key) => (
+              <DuneBarChart.Bar key={key} dataKey={key} stackId="ops" />
+            ))}
+          </DuneBarChart>
         );
       }
       if (variant === 'horizontal') {
         return (
-          <DuneBarChart<ThroughputRow>
+          <DuneBarChart
             data={data}
-            index="month"
-            categories={['melange']}
             config={throughputConfig}
             fill={fill}
             pixel={pixel}
@@ -237,16 +241,21 @@ function ChartCanvas({ chart, controls }: { chart: ChartId; controls: Playground
             height={height}
             title="Horizontal bars"
             description="Categories on Y as pixel rows."
-            chartProps={{ layout: 'vertical' }}
+            layout="vertical"
             valueFormatter={(value) => String(value)}
-          />
+          >
+            <DuneBarChart.Grid />
+            <DuneBarChart.XAxis dataKey="month" />
+            <DuneBarChart.YAxis />
+            <DuneBarChart.Tooltip />
+            <DuneBarChart.Legend />
+            <DuneBarChart.Bar dataKey="melange" />
+          </DuneBarChart>
         );
       }
       return (
-        <DuneBarChart<ThroughputRow>
+        <DuneBarChart
           data={data}
-          index="month"
-          categories={['melange']}
           config={throughputConfig}
           fill={fill}
           pixel={pixel}
@@ -255,15 +264,20 @@ function ChartCanvas({ chart, controls }: { chart: ChartId; controls: Playground
           title="Simple bars"
           description="Single-series melange bars."
           valueFormatter={(value) => String(value)}
-        />
+        >
+          <DuneBarChart.Grid />
+          <DuneBarChart.XAxis dataKey="month" />
+          <DuneBarChart.YAxis />
+          <DuneBarChart.Tooltip />
+          <DuneBarChart.Legend />
+          <DuneBarChart.Bar dataKey="melange" />
+        </DuneBarChart>
       );
 
     case 'line':
       return (
-        <DuneLineChart<ThroughputRow>
+        <DuneLineChart
           data={data}
-          index="month"
-          categories={variant === 'multi' ? ['melange', 'water', 'thrift'] : ['melange']}
           config={throughputConfig}
           pixel={pixel}
           loading={loading}
@@ -271,15 +285,25 @@ function ChartCanvas({ chart, controls }: { chart: ChartId; controls: Playground
           title={variant === 'multi' ? 'Multi-series line' : 'Simple line'}
           description="Stepped pixel lines."
           valueFormatter={(value) => String(value)}
-        />
+        >
+          <DuneLineChart.Grid />
+          <DuneLineChart.XAxis dataKey="month" />
+          <DuneLineChart.YAxis />
+          <DuneLineChart.Tooltip />
+          <DuneLineChart.Legend />
+          {(variant === 'multi'
+            ? (['melange', 'water', 'thrift'] as const)
+            : (['melange'] as const)
+          ).map((key) => (
+            <DuneLineChart.Line key={key} dataKey={key} />
+          ))}
+        </DuneLineChart>
       );
 
     case 'pie':
       return (
-        <DunePieChart<ShareSlice>
+        <DunePieChart
           data={slices}
-          dataKey="value"
-          nameKey="name"
           config={throughputConfig}
           fill={fill}
           pixel={pixel}
@@ -287,17 +311,22 @@ function ChartCanvas({ chart, controls }: { chart: ChartId; controls: Playground
           height={height}
           title={variant === 'donut' ? 'Pixel donut' : 'Pixel pie'}
           description="Share as pixel wedges."
-          pieProps={variant === 'donut' ? { innerRadius: '45%', outerRadius: '80%' } : undefined}
           valueFormatter={(value) => String(value)}
-        />
+        >
+          <DunePieChart.Tooltip />
+          <DunePieChart.Legend />
+          <DunePieChart.Pie
+            dataKey="value"
+            nameKey="name"
+            {...(variant === 'donut' ? { innerRadius: '45%', outerRadius: '80%' } : null)}
+          />
+        </DunePieChart>
       );
 
     case 'radar':
       return (
-        <DuneRadarChart<RadarRow>
+        <DuneRadarChart
           data={radar}
-          index="axis"
-          categories={['melange', 'water', 'thrift']}
           config={throughputConfig}
           fill={fill}
           pixel={pixel}
@@ -306,15 +335,22 @@ function ChartCanvas({ chart, controls }: { chart: ChartId; controls: Playground
           title="Pixel radar"
           description="Ops metrics as pixel radar."
           valueFormatter={(value) => String(value)}
-        />
+        >
+          <DuneRadarChart.PolarGrid />
+          <DuneRadarChart.PolarAngleAxis dataKey="axis" />
+          <DuneRadarChart.PolarRadiusAxis />
+          <DuneRadarChart.Tooltip />
+          <DuneRadarChart.Legend />
+          <DuneRadarChart.Radar dataKey="melange" />
+          <DuneRadarChart.Radar dataKey="water" />
+          <DuneRadarChart.Radar dataKey="thrift" />
+        </DuneRadarChart>
       );
 
     case 'radial':
       return (
-        <DuneRadialChart<ShareSlice>
+        <DuneRadialChart
           data={slices}
-          dataKey="value"
-          nameKey="name"
           config={throughputConfig}
           fill={fill}
           pixel={pixel}
@@ -324,8 +360,15 @@ function ChartCanvas({ chart, controls }: { chart: ChartId; controls: Playground
           description="Concentric pixel ring arcs."
           chartProps={variant === 'semi' ? { startAngle: 180, endAngle: 0, cy: '70%' } : undefined}
           valueFormatter={(value) => String(value)}
-        />
+        >
+          <DuneRadialChart.Tooltip />
+          <DuneRadialChart.Legend />
+          <DuneRadialChart.RadialBar dataKey="value" nameKey="name" />
+        </DuneRadialChart>
       );
+
+    default:
+      return null;
   }
 }
 
@@ -382,7 +425,7 @@ export function ChartPlayground() {
                 <Select
                   value={chart}
                   onValueChange={(value) => {
-                    if (value != null) setChart(value as ChartId);
+                    if (value != null) setChart(value);
                   }}
                 >
                   <SelectTrigger id="chart-select" className="w-full">
@@ -424,7 +467,7 @@ export function ChartPlayground() {
                 <Select
                   value={theme}
                   onValueChange={(value) => {
-                    if (value != null) setTheme(value as DuneTheme);
+                    if (value != null) setTheme(value);
                   }}
                 >
                   <SelectTrigger id="theme-select" className="w-full">
@@ -445,7 +488,7 @@ export function ChartPlayground() {
                   value={fill}
                   disabled={!supportsFill}
                   onValueChange={(value) => {
-                    if (value != null) setFill(value as PixelWaveFill);
+                    if (value != null) setFill(value);
                   }}
                 >
                   <SelectTrigger id="fill-select" className="w-full">

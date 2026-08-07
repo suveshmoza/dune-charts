@@ -48,17 +48,52 @@ export type {
   DuneSeriesConfig,
 } from './types';
 
-export { DuneAreaChart, type DuneAreaChartProps } from './charts/area/DuneAreaChart';
+export {
+  DuneAreaChart,
+  type DuneAreaChartProps,
+  type DuneAreaChartAreaProps,
+} from './charts/area/DuneAreaChart';
 
-export { DuneBarChart } from './charts/bar/DuneBarChart';
+export { DuneBarChart, type DuneBarChartBarProps } from './charts/bar/DuneBarChart';
 
-export { DuneLineChart } from './charts/line/DuneLineChart';
+export { DuneLineChart, type DuneLineChartLineProps } from './charts/line/DuneLineChart';
 
-export { DunePieChart } from './charts/pie/DunePieChart';
+export { DunePieChart, type DunePieChartPieProps } from './charts/pie/DunePieChart';
 
-export { DuneRadarChart } from './charts/radar/DuneRadarChart';
+export { DuneRadarChart, type DuneRadarChartRadarProps } from './charts/radar/DuneRadarChart';
 
-export { DuneRadialChart } from './charts/radial/DuneRadialChart';
+export {
+  DuneRadialChart,
+  type DuneRadialChartRadialBarProps,
+} from './charts/radial/DuneRadialChart';
+
+export {
+  DuneCartesianGrid,
+  DuneXAxis,
+  DuneYAxis,
+  DuneTooltip,
+  DuneLegend,
+  type DuneCartesianGridProps,
+  type DuneXAxisProps,
+  type DuneYAxisProps,
+  type DuneTooltipProps,
+  type DuneLegendProps,
+} from './charts/shared/cartesianParts';
+
+export {
+  DunePolarGrid,
+  DunePolarAngleAxis,
+  DunePolarRadiusAxis,
+  type DunePolarGridProps,
+  type DunePolarAngleAxisProps,
+  type DunePolarRadiusAxisProps,
+} from './charts/shared/polarParts';
+
+export {
+  useChartComposition,
+  type ChartCompositionValue,
+  type RegisteredSeries,
+} from './charts/shared/composition';
 
 export {
   bandsFromColor,

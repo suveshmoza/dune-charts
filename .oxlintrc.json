@@ -18,5 +18,14 @@
     ],
     "import/no-unassigned-import": ["warn", { "allow": ["**/*.css"] }]
   },
-  "ignorePatterns": ["**/dist/**", "**/node_modules/**"]
+  "ignorePatterns": ["**/dist/**", "**/node_modules/**"],
+  "overrides": [
+    {
+      "files": ["packages/dune-charts/**/*.{ts,tsx}"],
+      "rules": {
+        "react/only-export-components": "off",
+        "typescript/no-unsafe-type-assertion": "off"
+      }
+    }
+  ]
 }
