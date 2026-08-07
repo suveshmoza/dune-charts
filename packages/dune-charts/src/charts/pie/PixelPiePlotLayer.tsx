@@ -198,6 +198,7 @@ export function PixelPiePlotLayer({
     };
 
     raf = requestAnimationFrame(tick);
+    // oxlint-disable-next-line typescript/consistent-return
     return () => {
       cancelAnimationFrame(raf);
     };
@@ -205,17 +206,17 @@ export function PixelPiePlotLayer({
 
   const plotSizeKey = layout == null ? '' : `${layout.plotW}x${layout.plotH}`;
   useLayoutEffect(() => {
-    if (!shimmer) return undefined;
+    if (!shimmer) return;
     const canvas = canvasRef.current;
     const bake = bakeRef.current;
-    if (canvas == null || bake == null || layout == null) return undefined;
+    if (canvas == null || bake == null || layout == null) return;
 
     const { plotW, plotH } = layout;
     const dpr = typeof window !== 'undefined' ? Math.max(1, window.devicePixelRatio || 1) : 1;
     const cssW = Math.max(1, plotW);
     const cssH = Math.max(1, plotH);
     const ctx = canvas.getContext('2d');
-    if (ctx == null) return undefined;
+    if (ctx == null) return;
 
     let raf = 0;
     const start = performance.now();
@@ -242,11 +243,11 @@ export function PixelPiePlotLayer({
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
+    // oxlint-disable-next-line typescript/consistent-return
     return () => {
       cancelAnimationFrame(raf);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- size keyed via plotSizeKey
-  }, [shimmer, plotSizeKey]);
+  }, [shimmer, plotSizeKey, layout, layout?.plotW, layout?.plotH]);
 
   if (layout == null || plot == null) return null;
 

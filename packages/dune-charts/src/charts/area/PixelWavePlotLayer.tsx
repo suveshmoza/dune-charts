@@ -174,6 +174,7 @@ export function PixelWavePlotLayer({
     };
 
     raf = requestAnimationFrame(tick);
+    // oxlint-disable-next-line typescript/consistent-return
     return () => {
       cancelAnimationFrame(raf);
     };
