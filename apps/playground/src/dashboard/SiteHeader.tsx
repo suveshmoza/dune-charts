@@ -11,9 +11,11 @@ type SiteHeaderProps = {
   theme: DuneTheme;
   fill: PixelWaveFill;
   pixel: PixelSize;
+  loading: boolean;
   onThemeChange: (theme: DuneTheme) => void;
   onFillChange: (fill: PixelWaveFill) => void;
   onPixelChange: (pixel: PixelSize) => void;
+  onLoadingChange: (loading: boolean) => void;
 };
 
 function isDuneTheme(value: string): value is DuneTheme {
@@ -43,9 +45,11 @@ export function SiteHeader({
   theme,
   fill,
   pixel,
+  loading,
   onThemeChange,
   onFillChange,
   onPixelChange,
+  onLoadingChange,
 }: SiteHeaderProps) {
   return (
     <header className="db-header">
@@ -113,6 +117,16 @@ export function SiteHeader({
                 {value}
               </option>
             ))}
+          </select>
+        </label>
+        <label className="db-field">
+          <span>Loading</span>
+          <select
+            value={loading ? 'on' : 'off'}
+            onChange={(e) => onLoadingChange(e.target.value === 'on')}
+          >
+            <option value="off">off</option>
+            <option value="on">on</option>
           </select>
         </label>
       </div>

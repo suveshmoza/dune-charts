@@ -122,6 +122,12 @@ type DuneCartesianBaseProps<T> = {
   description?: string;
   /** Empty-state copy when `data` is empty. Default: "No data to display". */
   emptyMessage?: string;
+  /** When `true`, show loading UI instead of the plot (wins over empty). */
+  loading?: boolean;
+  /** Accessible loading copy. Default: "Loading…". */
+  loadingMessage?: string;
+  /** Optional custom loading indicator; defaults to a spinner. */
+  loadingIndicator?: ReactNode;
   valueFormatter?: (value: number, key: DataKey<T>) => string;
   xAxisProps?: Omit<XAxisProps<unknown, unknown>, 'dataKey'>;
   yAxisProps?: YAxisProps<unknown, unknown>;
@@ -190,6 +196,12 @@ export type DunePieChartProps<T extends Record<string, unknown>> = {
   title?: string;
   description?: string;
   emptyMessage?: string;
+  /** When `true`, show loading UI instead of the plot (wins over empty). */
+  loading?: boolean;
+  /** Accessible loading copy. Default: "Loading…". */
+  loadingMessage?: string;
+  /** Optional custom loading indicator; defaults to a spinner. */
+  loadingIndicator?: ReactNode;
   valueFormatter?: (value: number, name: string) => string;
   chartProps?: DunePieChartPassThrough;
   pieProps?: DunePiePassThrough;
@@ -213,6 +225,12 @@ export type DuneRadarChartProps<T extends Record<string, unknown>> = {
   title?: string;
   description?: string;
   emptyMessage?: string;
+  /** When `true`, show loading UI instead of the plot (wins over empty). */
+  loading?: boolean;
+  /** Accessible loading copy. Default: "Loading…". */
+  loadingMessage?: string;
+  /** Optional custom loading indicator; defaults to a spinner. */
+  loadingIndicator?: ReactNode;
   valueFormatter?: (value: number, key: DataKey<T>) => string;
   chartProps?: DuneRadarChartPassThrough;
   seriesProps?: Partial<Record<DataKey<T>, DuneRadarSeriesPassThrough>>;
@@ -241,6 +259,12 @@ export type DuneRadialChartProps<T extends Record<string, unknown>> = {
   title?: string;
   description?: string;
   emptyMessage?: string;
+  /** When `true`, show loading UI instead of the plot (wins over empty). */
+  loading?: boolean;
+  /** Accessible loading copy. Default: "Loading…". */
+  loadingMessage?: string;
+  /** Optional custom loading indicator; defaults to a spinner. */
+  loadingIndicator?: ReactNode;
   valueFormatter?: (value: number, name: string) => string;
   chartProps?: DuneRadialChartPassThrough;
   radialBarProps?: DuneRadialBarPassThrough;

@@ -1,9 +1,17 @@
-import { useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import {
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
 import {
   Bar,
   BarChart,
   CartesianGrid,
   Legend,
+  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
@@ -11,11 +19,27 @@ import {
 } from 'recharts';
 
 import { DuneChartContainer } from '../primitives/DuneChartContainer';
+import {
+  DEFAULT_LOADING_MESSAGE,
+  DuneChartLoadingBadge,
+} from '../primitives/DuneChartLoading';
 import { useDuneTheme } from '../provider/DuneChartProvider';
 import type { DuneBarChartProps } from '../types';
 import { usePrefersReducedMotion } from '../utils/reducedMotion';
-import { buildSeriesStyle, getSeriesVar, resolveSeriesBaseColors } from '../utils/series';
+import {
+  buildSeriesStyle,
+  getSeriesVar,
+  resolveCssColor,
+  resolveSeriesBaseColors,
+} from '../utils/series';
 import { buildSeriesList } from './buildSeriesList';
+import {
+  buildLoadingBarRows,
+  buildLoadingBarSeriesFromRows,
+  DEFAULT_LOADING_BAR_COUNT,
+  LOADING_BAR_INDEX_KEY,
+  LOADING_BAR_VALUE_KEY,
+} from './chartLoadingBars';
 import { PixelBarPlotLayer } from './PixelBarPlotLayer';
 
 export type { DuneBarChartProps };
@@ -53,6 +77,9 @@ export function DuneBarChart<T extends Record<string, unknown>>({
   title,
   description,
   emptyMessage = DEFAULT_EMPTY_MESSAGE,
+  loading = false,
+  loadingMessage = DEFAULT_LOADING_MESSAGE,
+  loadingIndicator,
   valueFormatter,
   chartProps,
   seriesProps,
@@ -68,6 +95,7 @@ export function DuneBarChart<T extends Record<string, unknown>>({
   const { theme } = useDuneTheme();
   const seriesStyle = buildSeriesStyle(categories, config);
   const [baseColors, setBaseColors] = useState<string[]>([]);
+  const [trackColor, setTrackColor] = useState('#d9d3c8');
   const emptyId = useId();
   const emptyTitleId = title ? `${emptyId}-title` : undefined;
   const emptyDescId = description ? `${emptyId}-description` : undefined;
@@ -75,12 +103,14 @@ export function DuneBarChart<T extends Record<string, unknown>>({
 
   useLayoutEffect(() => {
     const host = containerRef.current;
-    if (host == null || categories.length === 0) {
+    if (host == null) return;
+    setTrackColor(resolveCssColor(host, 'var(--dune-track)'));
+    if (categories.length === 0) {
       setBaseColors([]);
       return;
     }
     setBaseColors(resolveSeriesBaseColors(host, categories.length));
-  }, [categories, config, theme]);
+  }, [categories, config, theme, loading]);
 
   const barSeries = useMemo(
     () => buildSeriesList(data, categories, config, baseColors, seriesProps, chartProps),
@@ -89,7 +119,30 @@ export function DuneBarChart<T extends Record<string, unknown>>({
   const paintsReady = baseColors.length === categories.length;
   const indexValues = useMemo(() => data.map((row) => row[index]), [data, index]);
 
-  if (data.length === 0) {
+  const loadingBarCount = useMemo(() => {
+    if (data.length > 0) return Math.max(6, Math.min(16, data.length));
+    return DEFAULT_LOADING_BAR_COUNT;
+  }, [data.length]);
+
+  // Stable skeleton — heights do not re-roll while loading.
+  const loadingRows = useMemo(() => buildLoadingBarRows(loadingBarCount), [loadingBarCount]);
+  const loadingSeries = useMemo(
+    () => buildLoadingBarSeriesFromRows(loadingRows, trackColor),
+    [loadingRows, trackColor],
+  );
+  const loadingIndexValues = useMemo(
+    () => loadingRows.map((row) => row[LOADING_BAR_INDEX_KEY]),
+    [loadingRows],
+  );
+
+  const {
+    accessibilityLayer: chartAccessibilityLayer = true,
+    layout: barLayout = 'horizontal',
+    ...restChartProps
+  } = chartProps ?? {};
+  const isHorizontalBars = barLayout === 'vertical';
+
+  if (!loading && data.length === 0) {
     const emptyStyle: CSSProperties = {
       ...seriesStyle,
       height: toCssSize(height),
@@ -119,6 +172,77 @@ export function DuneBarChart<T extends Record<string, unknown>>({
         <p id={emptyMessageId} className="dune-chart-empty__message">
           {emptyMessage}
         </p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    const loadingStyle: CSSProperties = {
+      ...seriesStyle,
+      height: toCssSize(height),
+      minHeight: toCssSize(height) ?? 160,
+      position: 'relative',
+    };
+
+    return (
+      <div
+        ref={containerRef}
+        className={['dune-chart-container', 'dune-chart-loading-shell', className]
+          .filter(Boolean)
+          .join(' ')}
+        style={loadingStyle}
+        role="status"
+        aria-busy="true"
+        aria-live="polite"
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={loadingRows}
+            margin={
+              isHorizontalBars
+                ? { top: 12, right: 16, left: 8, bottom: 4 }
+                : { top: 12, right: 16, left: 4, bottom: 4 }
+            }
+            accessibilityLayer={false}
+            layout={barLayout}
+            {...restChartProps}
+          >
+            {isHorizontalBars ? (
+              <>
+                <XAxis type="number" hide domain={[0, 100]} />
+                <YAxis type="category" dataKey={LOADING_BAR_INDEX_KEY} hide width={0} />
+              </>
+            ) : (
+              <>
+                <XAxis dataKey={LOADING_BAR_INDEX_KEY} hide />
+                <YAxis hide domain={[0, 100]} width={0} />
+              </>
+            )}
+
+            <PixelBarPlotLayer
+              series={loadingSeries}
+              pointCount={loadingRows.length}
+              indexValues={loadingIndexValues}
+              pixel={pixel}
+              fill="dither"
+              layout={barLayout}
+              shimmer={!prefersReducedMotion}
+            />
+
+            <Bar
+              dataKey={LOADING_BAR_VALUE_KEY}
+              fill="var(--dune-track)"
+              fillOpacity={0}
+              stroke="none"
+              maxBarSize={48}
+              isAnimationActive={false}
+              legendType="none"
+              activeBar={false}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+
+        <DuneChartLoadingBadge message={loadingMessage} indicator={loadingIndicator} />
       </div>
     );
   }
@@ -154,13 +278,6 @@ export function DuneBarChart<T extends Record<string, unknown>>({
       </div>
     );
   };
-
-  const {
-    accessibilityLayer: chartAccessibilityLayer = true,
-    layout: barLayout = 'horizontal',
-    ...restChartProps
-  } = chartProps ?? {};
-  const isHorizontalBars = barLayout === 'vertical';
 
   return (
     <DuneChartContainer

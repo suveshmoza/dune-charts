@@ -31,6 +31,7 @@ export default function Dashboard() {
   const [theme, setTheme] = useState<DuneTheme>('dune');
   const [fill, setFill] = useState<PixelWaveFill>('dither');
   const [pixel, setPixel] = useState<PixelSize>(2);
+  const [loading, setLoading] = useState(false);
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(() =>
     typeof window !== 'undefined' ? !window.matchMedia(MOBILE_MQ).matches : true,
@@ -78,14 +79,16 @@ export default function Dashboard() {
               theme={theme}
               fill={fill}
               pixel={pixel}
+              loading={loading}
               onThemeChange={setTheme}
               onFillChange={setFill}
               onPixelChange={setPixel}
+              onLoadingChange={setLoading}
             />
             <div className="db-main">
               <SectionCards />
               <div className="db-main__chart">
-                <ChartAreaInteractive fill={fill} pixel={pixel} />
+                <ChartAreaInteractive fill={fill} pixel={pixel} loading={loading} />
               </div>
               <DataTable />
             </div>

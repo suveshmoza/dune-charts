@@ -13,6 +13,7 @@ import {
   PolarAngleAxis,
   RadialBar,
   RadialBarChart,
+  ResponsiveContainer,
   Sector,
   Tooltip,
   type SectorProps,
@@ -20,6 +21,10 @@ import {
 } from 'recharts';
 
 import { DuneChartContainer } from '../primitives/DuneChartContainer';
+import {
+  DEFAULT_LOADING_MESSAGE,
+  DuneChartLoadingBadge,
+} from '../primitives/DuneChartLoading';
 import { useDuneTheme } from '../provider/DuneChartProvider';
 import type { DuneRadialChartProps } from '../types';
 import { usePrefersReducedMotion } from '../utils/reducedMotion';
@@ -30,9 +35,17 @@ import {
   resolveSeriesBaseColors,
 } from '../utils/series';
 import {
+  buildLoadingRadialBars,
+  buildLoadingRadialRows,
+  DEFAULT_LOADING_RADIAL_COUNT,
+  LOADING_RADIAL_NAME_KEY,
+  LOADING_RADIAL_VALUE_KEY,
+} from './chartLoadingBars';
+import {
   buildRadialBarList,
   radialHitsSignature,
   type PixelRadialHitSector,
+  type PixelRadialLayoutOptions,
 } from './pixelRadialEngine';
 import { PixelRadialPlotLayer } from './PixelRadialPlotLayer';
 
@@ -140,6 +153,9 @@ export function DuneRadialChart<T extends Record<string, unknown>>({
   title,
   description,
   emptyMessage = DEFAULT_EMPTY_MESSAGE,
+  loading = false,
+  loadingMessage = DEFAULT_LOADING_MESSAGE,
+  loadingIndicator,
   valueFormatter,
   chartProps,
   radialBarProps,
@@ -175,13 +191,14 @@ export function DuneRadialChart<T extends Record<string, unknown>>({
 
   useLayoutEffect(() => {
     const host = containerRef.current;
-    if (host == null || barNames.length === 0) {
+    if (host == null) return;
+    setTrackColor(resolveCssColor(host, 'var(--dune-track)'));
+    if (barNames.length === 0) {
       setBaseColors([]);
       return;
     }
     setBaseColors(resolveSeriesBaseColors(host, barNames.length));
-    setTrackColor(resolveCssColor(host, 'var(--dune-track)'));
-  }, [barNames, config, theme]);
+  }, [barNames, config, theme, loading]);
 
   const onHit = useCallback((hit: PixelRadialHitSector) => {
     setHitSectors((prev) => {
@@ -218,7 +235,43 @@ export function DuneRadialChart<T extends Record<string, unknown>>({
     return max > 0 ? max : 1;
   }, [bars]);
 
-  if (data.length === 0) {
+  const {
+    accessibilityLayer: chartAccessibilityLayer = true,
+    innerRadius = DEFAULT_INNER_RADIUS,
+    outerRadius = DEFAULT_OUTER_RADIUS,
+    startAngle: chartStartAngle = 0,
+    endAngle: chartEndAngle = 360,
+    cx: chartCx,
+    cy: chartCy,
+    ...restChartProps
+  } = chartProps ?? {};
+
+  const loadingBarCount = useMemo(() => {
+    if (data.length > 0) return Math.max(4, Math.min(8, data.length));
+    return DEFAULT_LOADING_RADIAL_COUNT;
+  }, [data.length]);
+
+  const loadingRows = useMemo(
+    () => buildLoadingRadialRows(loadingBarCount),
+    [loadingBarCount],
+  );
+  const loadingBars = useMemo(
+    () => buildLoadingRadialBars(loadingBarCount, trackColor),
+    [loadingBarCount, trackColor],
+  );
+
+  const loadingLayoutOptions = useMemo((): Omit<PixelRadialLayoutOptions, 'pixel'> => {
+    return {
+      innerRadius,
+      outerRadius,
+      startAngle: chartStartAngle,
+      endAngle: chartEndAngle,
+      cx: chartCx,
+      cy: chartCy,
+    };
+  }, [innerRadius, outerRadius, chartStartAngle, chartEndAngle, chartCx, chartCy]);
+
+  if (!loading && data.length === 0) {
     const emptyStyle: CSSProperties = {
       ...seriesStyle,
       height: toCssSize(height),
@@ -248,6 +301,81 @@ export function DuneRadialChart<T extends Record<string, unknown>>({
         <p id={emptyMessageId} className="dune-chart-empty__message">
           {emptyMessage}
         </p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    const loadingStyle: CSSProperties = {
+      ...seriesStyle,
+      height: toCssSize(height),
+      minHeight: toCssSize(height) ?? 160,
+      position: 'relative',
+    };
+
+    return (
+      <div
+        ref={containerRef}
+        className={['dune-chart-container', 'dune-chart-loading-shell', className]
+          .filter(Boolean)
+          .join(' ')}
+        style={loadingStyle}
+        role="status"
+        aria-busy="true"
+        aria-live="polite"
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <RadialBarChart
+            data={loadingRows}
+            accessibilityLayer={false}
+            innerRadius={innerRadius}
+            outerRadius={outerRadius}
+            startAngle={chartStartAngle}
+            endAngle={chartEndAngle}
+            cx={chartCx}
+            cy={chartCy}
+          >
+            <PixelRadialPlotLayer
+              bars={loadingBars}
+              pixel={pixel}
+              fill="dither"
+              trackStartAngle={chartStartAngle}
+              trackEndAngle={chartEndAngle}
+              layoutOptions={loadingLayoutOptions}
+              paintTracks={false}
+              shimmer={!prefersReducedMotion}
+            />
+
+            <PolarAngleAxis
+              type="number"
+              domain={[0, 100]}
+              tick={false}
+              tickLine={false}
+              axisLine={false}
+            />
+
+            <RadialBar
+              dataKey={LOADING_RADIAL_VALUE_KEY}
+              background={false}
+              stroke="none"
+              fill="transparent"
+              fillOpacity={0}
+              isAnimationActive={false}
+              activeShape={false}
+              legendType="none"
+            >
+              {loadingRows.map((row) => (
+                <Cell
+                  key={String(row[LOADING_RADIAL_NAME_KEY])}
+                  fill="transparent"
+                  stroke="none"
+                />
+              ))}
+            </RadialBar>
+          </RadialBarChart>
+        </ResponsiveContainer>
+
+        <DuneChartLoadingBadge message={loadingMessage} indicator={loadingIndicator} />
       </div>
     );
   }
@@ -285,14 +413,6 @@ export function DuneRadialChart<T extends Record<string, unknown>>({
   };
 
   const {
-    accessibilityLayer: chartAccessibilityLayer = true,
-    innerRadius = DEFAULT_INNER_RADIUS,
-    outerRadius = DEFAULT_OUTER_RADIUS,
-    startAngle: chartStartAngle = 0,
-    endAngle: chartEndAngle = 360,
-    ...restChartProps
-  } = chartProps ?? {};
-  const {
     activeShape: _activeShape,
     background: _background,
     shape: _shape,
@@ -319,6 +439,8 @@ export function DuneRadialChart<T extends Record<string, unknown>>({
         outerRadius={outerRadius}
         startAngle={chartStartAngle}
         endAngle={chartEndAngle}
+        cx={chartCx}
+        cy={chartCy}
         {...restChartProps}
       >
         {paintsReady ? (

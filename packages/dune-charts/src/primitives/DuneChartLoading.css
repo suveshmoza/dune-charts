@@ -1,0 +1,80 @@
+.dune-chart-loading {
+  display: grid;
+  place-items: center;
+  color: var(--dune-muted-text);
+}
+
+.dune-chart-loading__body {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+}
+
+.dune-chart-loading__spinner {
+  box-sizing: border-box;
+  display: block;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--dune-border);
+  border-top-color: var(--dune-1);
+  border-radius: 50%;
+  animation: dune-loading-spin 0.7s linear infinite;
+}
+
+.dune-chart-loading__message {
+  margin: 0;
+  font-size: 14px;
+  color: var(--dune-muted-text);
+}
+
+.dune-chart-loading-shell {
+  position: relative;
+  width: 100%;
+}
+
+.dune-chart-loading-badge {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.dune-chart-loading-badge__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--dune-bg);
+  color: var(--dune-ink);
+  border: 2px solid var(--dune-border);
+  box-shadow: 3px 3px 0 var(--dune-tooltip-shadow);
+  font-family: var(--dune-font);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.dune-chart-loading-badge__chip .dune-chart-loading__spinner {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+
+.dune-chart-loading-badge__text {
+  margin: 0;
+}
+
+@keyframes dune-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dune-chart-loading__spinner {
+    animation: none;
+    border-top-color: var(--dune-1);
+    opacity: 0.85;
+  }
+}

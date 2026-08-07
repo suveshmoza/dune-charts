@@ -1,3 +1,4 @@
 @import './tokens/styles.css';
 @import './primitives/DuneChartContainer.css';
+@import './primitives/DuneChartLoading.css';
 @import './charts/DuneAreaChart.css';

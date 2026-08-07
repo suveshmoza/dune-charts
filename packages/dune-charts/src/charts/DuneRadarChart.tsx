@@ -6,16 +6,33 @@ import {
   PolarRadiusAxis,
   Radar,
   RadarChart,
+  ResponsiveContainer,
   Tooltip,
   type TooltipContentProps,
 } from 'recharts';
 
 import { DuneChartContainer } from '../primitives/DuneChartContainer';
+import {
+  DEFAULT_LOADING_MESSAGE,
+  DuneChartLoadingBadge,
+} from '../primitives/DuneChartLoading';
 import { useDuneTheme } from '../provider/DuneChartProvider';
 import type { DuneRadarChartProps } from '../types';
 import { usePrefersReducedMotion } from '../utils/reducedMotion';
-import { buildSeriesStyle, getSeriesVar, resolveSeriesBaseColors } from '../utils/series';
+import {
+  buildSeriesStyle,
+  getSeriesVar,
+  resolveCssColor,
+  resolveSeriesBaseColors,
+} from '../utils/series';
 import { buildSeriesList } from './buildSeriesList';
+import {
+  buildLoadingRadarRows,
+  buildLoadingRadarSeriesFromRows,
+  DEFAULT_LOADING_RADAR_COUNT,
+  LOADING_RADAR_INDEX_KEY,
+  LOADING_RADAR_VALUE_KEY,
+} from './chartLoadingBars';
 import { PixelRadarPlotLayer } from './PixelRadarPlotLayer';
 
 export type { DuneRadarChartProps };
@@ -53,6 +70,9 @@ export function DuneRadarChart<T extends Record<string, unknown>>({
   title,
   description,
   emptyMessage = DEFAULT_EMPTY_MESSAGE,
+  loading = false,
+  loadingMessage = DEFAULT_LOADING_MESSAGE,
+  loadingIndicator,
   valueFormatter,
   chartProps,
   seriesProps,
@@ -69,6 +89,7 @@ export function DuneRadarChart<T extends Record<string, unknown>>({
   const { theme } = useDuneTheme();
   const seriesStyle = buildSeriesStyle(categories, config);
   const [baseColors, setBaseColors] = useState<string[]>([]);
+  const [trackColor, setTrackColor] = useState('#d9d3c8');
   const emptyId = useId();
   const emptyTitleId = title ? `${emptyId}-title` : undefined;
   const emptyDescId = description ? `${emptyId}-description` : undefined;
@@ -76,12 +97,14 @@ export function DuneRadarChart<T extends Record<string, unknown>>({
 
   useLayoutEffect(() => {
     const host = containerRef.current;
-    if (host == null || categories.length === 0) {
+    if (host == null) return;
+    setTrackColor(resolveCssColor(host, 'var(--dune-track)'));
+    if (categories.length === 0) {
       setBaseColors([]);
       return;
     }
     setBaseColors(resolveSeriesBaseColors(host, categories.length));
-  }, [categories, config, theme]);
+  }, [categories, config, theme, loading]);
 
   const radarSeries = useMemo(
     () => buildSeriesList(data, categories, config, baseColors, undefined, undefined),
@@ -89,7 +112,21 @@ export function DuneRadarChart<T extends Record<string, unknown>>({
   );
   const paintsReady = baseColors.length === categories.length && categories.length > 0;
 
-  if (data.length === 0) {
+  const loadingPointCount = useMemo(() => {
+    if (data.length > 0) return Math.max(5, Math.min(10, data.length));
+    return DEFAULT_LOADING_RADAR_COUNT;
+  }, [data.length]);
+
+  const loadingRows = useMemo(
+    () => buildLoadingRadarRows(loadingPointCount),
+    [loadingPointCount],
+  );
+  const loadingSeries = useMemo(
+    () => buildLoadingRadarSeriesFromRows(loadingRows, trackColor),
+    [loadingRows, trackColor],
+  );
+
+  if (!loading && data.length === 0) {
     const emptyStyle: CSSProperties = {
       ...seriesStyle,
       height: toCssSize(height),
@@ -119,6 +156,61 @@ export function DuneRadarChart<T extends Record<string, unknown>>({
         <p id={emptyMessageId} className="dune-chart-empty__message">
           {emptyMessage}
         </p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    const loadingStyle: CSSProperties = {
+      ...seriesStyle,
+      height: toCssSize(height),
+      minHeight: toCssSize(height) ?? 160,
+      position: 'relative',
+    };
+
+    return (
+      <div
+        ref={containerRef}
+        className={['dune-chart-container', 'dune-chart-loading-shell', className]
+          .filter(Boolean)
+          .join(' ')}
+        style={loadingStyle}
+        role="status"
+        aria-busy="true"
+        aria-live="polite"
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <RadarChart
+            data={loadingRows}
+            margin={{ top: 16, right: 24, left: 24, bottom: 8 }}
+            accessibilityLayer={false}
+          >
+            <PolarAngleAxis dataKey={LOADING_RADAR_INDEX_KEY} tick={false} axisLine={false} />
+            <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} tickLine={false} />
+
+            <PixelRadarPlotLayer
+              series={loadingSeries}
+              pointCount={loadingRows.length}
+              pixel={pixel}
+              fill="dither"
+              domainMax={100}
+              shimmer={!prefersReducedMotion}
+            />
+
+            <Radar
+              dataKey={LOADING_RADAR_VALUE_KEY}
+              stroke="none"
+              fill="transparent"
+              fillOpacity={0}
+              dot={false}
+              activeDot={false}
+              isAnimationActive={false}
+              legendType="none"
+            />
+          </RadarChart>
+        </ResponsiveContainer>
+
+        <DuneChartLoadingBadge message={loadingMessage} indicator={loadingIndicator} />
       </div>
     );
   }

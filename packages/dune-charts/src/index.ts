@@ -10,6 +10,14 @@ export {
 export { DuneChartContainer, type DuneChartContainerProps } from './primitives/DuneChartContainer';
 
 export {
+  DuneChartLoading,
+  DuneChartLoadingBadge,
+  DEFAULT_LOADING_MESSAGE,
+  type DuneChartLoadingProps,
+  type DuneChartLoadingBadgeProps,
+} from './primitives/DuneChartLoading';
+
+export {
   DUNE_CSS_VARS,
   DUNE_THEMES,
   DUNE_TOKEN_KEYS,

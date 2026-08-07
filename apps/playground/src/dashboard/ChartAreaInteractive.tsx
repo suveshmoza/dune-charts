@@ -23,6 +23,7 @@ type RangeId = (typeof RANGES)[number]['id'];
 type ChartControls = {
   fill?: PixelWaveFill;
   pixel?: number;
+  loading?: boolean;
 };
 
 function ChartCard({
@@ -86,7 +87,7 @@ const expandStackProps = {
 } satisfies Record<'melange' | 'water' | 'thrift', { stackId: string }>;
 
 /** Stacked multi-series area with range toggle. */
-export function ChartAreaStacked({ fill = 'bands', pixel = 2 }: ChartControls) {
+export function ChartAreaStacked({ fill = 'bands', pixel = 2, loading = false }: ChartControls) {
   const { data, rangeToggle } = useRangeData();
 
   return (
@@ -105,6 +106,7 @@ export function ChartAreaStacked({ fill = 'bands', pixel = 2 }: ChartControls) {
         config={throughputConfig}
         fill={fill}
         pixel={pixel}
+        loading={loading}
         valueFormatter={(value) => String(value)}
         seriesProps={stackProps}
       />
@@ -113,7 +115,7 @@ export function ChartAreaStacked({ fill = 'bands', pixel = 2 }: ChartControls) {
 }
 
 /** Single-series area. */
-export function ChartAreaSimple({ fill = 'bands', pixel = 2 }: ChartControls) {
+export function ChartAreaSimple({ fill = 'bands', pixel = 2, loading = false }: ChartControls) {
   const { data, rangeToggle } = useRangeData();
 
   return (
@@ -132,6 +134,7 @@ export function ChartAreaSimple({ fill = 'bands', pixel = 2 }: ChartControls) {
         config={throughputConfig}
         fill={fill}
         pixel={pixel}
+        loading={loading}
         valueFormatter={(value) => String(value)}
       />
     </ChartCard>
@@ -139,7 +142,7 @@ export function ChartAreaSimple({ fill = 'bands', pixel = 2 }: ChartControls) {
 }
 
 /** 100% stacked share of three series. */
-export function ChartAreaExpand({ fill = 'bands', pixel = 2 }: ChartControls) {
+export function ChartAreaExpand({ fill = 'bands', pixel = 2, loading = false }: ChartControls) {
   const { data, rangeToggle } = useRangeData();
 
   return (
@@ -158,6 +161,7 @@ export function ChartAreaExpand({ fill = 'bands', pixel = 2 }: ChartControls) {
         config={throughputConfig}
         fill={fill}
         pixel={pixel}
+        loading={loading}
         valueFormatter={(value) => `${Math.round(value * 100)}%`}
         seriesProps={expandStackProps}
         chartProps={{ stackOffset: 'expand' }}
@@ -170,7 +174,7 @@ export function ChartAreaExpand({ fill = 'bands', pixel = 2 }: ChartControls) {
 }
 
 /** Stacked pixel bars. */
-export function ChartBarStacked({ fill = 'bands', pixel = 2 }: ChartControls) {
+export function ChartBarStacked({ fill = 'bands', pixel = 2, loading = false }: ChartControls) {
   const { data, rangeToggle } = useRangeData();
 
   return (
@@ -189,6 +193,7 @@ export function ChartBarStacked({ fill = 'bands', pixel = 2 }: ChartControls) {
         config={throughputConfig}
         fill={fill}
         pixel={pixel}
+        loading={loading}
         valueFormatter={(value) => String(value)}
         seriesProps={stackProps}
       />
@@ -197,7 +202,7 @@ export function ChartBarStacked({ fill = 'bands', pixel = 2 }: ChartControls) {
 }
 
 /** Single-series pixel bar. */
-export function ChartBarSimple({ fill = 'bands', pixel = 2 }: ChartControls) {
+export function ChartBarSimple({ fill = 'bands', pixel = 2, loading = false }: ChartControls) {
   const { data, rangeToggle } = useRangeData();
 
   return (
@@ -216,6 +221,7 @@ export function ChartBarSimple({ fill = 'bands', pixel = 2 }: ChartControls) {
         config={throughputConfig}
         fill={fill}
         pixel={pixel}
+        loading={loading}
         valueFormatter={(value) => String(value)}
       />
     </ChartCard>
@@ -223,7 +229,7 @@ export function ChartBarSimple({ fill = 'bands', pixel = 2 }: ChartControls) {
 }
 
 /** Horizontal pixel bars (`layout="vertical"` on Recharts). */
-export function ChartBarHorizontal({ fill = 'bands', pixel = 2 }: ChartControls) {
+export function ChartBarHorizontal({ fill = 'bands', pixel = 2, loading = false }: ChartControls) {
   const { data, rangeToggle } = useRangeData();
 
   return (
@@ -242,6 +248,7 @@ export function ChartBarHorizontal({ fill = 'bands', pixel = 2 }: ChartControls)
         config={throughputConfig}
         fill={fill}
         pixel={pixel}
+        loading={loading}
         valueFormatter={(value) => String(value)}
         chartProps={{ layout: 'vertical' }}
       />
@@ -250,7 +257,7 @@ export function ChartBarHorizontal({ fill = 'bands', pixel = 2 }: ChartControls)
 }
 
 /** Multi-series stepped pixel lines. */
-export function ChartLineMulti({ pixel = 2 }: ChartControls) {
+export function ChartLineMulti({ pixel = 2, loading = false }: ChartControls) {
   const { data, rangeToggle } = useRangeData();
 
   return (
@@ -268,6 +275,7 @@ export function ChartLineMulti({ pixel = 2 }: ChartControls) {
         description="Multi-series stepped pixel line chart."
         config={throughputConfig}
         pixel={pixel}
+        loading={loading}
         valueFormatter={(value) => String(value)}
       />
     </ChartCard>
@@ -275,7 +283,7 @@ export function ChartLineMulti({ pixel = 2 }: ChartControls) {
 }
 
 /** Single-series stepped pixel line. */
-export function ChartLineSimple({ pixel = 2 }: ChartControls) {
+export function ChartLineSimple({ pixel = 2, loading = false }: ChartControls) {
   const { data, rangeToggle } = useRangeData();
 
   return (
@@ -293,6 +301,7 @@ export function ChartLineSimple({ pixel = 2 }: ChartControls) {
         description="Single-series stepped pixel line chart."
         config={throughputConfig}
         pixel={pixel}
+        loading={loading}
         valueFormatter={(value) => String(value)}
       />
     </ChartCard>
@@ -310,7 +319,7 @@ const SHARE_SLICES: ShareSlice[] = [
 ];
 
 /** Pixel pie wedges. */
-export function ChartPieSimple({ fill = 'bands', pixel = 2 }: ChartControls) {
+export function ChartPieSimple({ fill = 'bands', pixel = 2, loading = false }: ChartControls) {
   return (
     <ChartCard title="Pixel pie" description="Chunky wedges — crest→depth bands from the rim.">
       <DunePieChart<ShareSlice>
@@ -323,6 +332,7 @@ export function ChartPieSimple({ fill = 'bands', pixel = 2 }: ChartControls) {
         config={throughputConfig}
         fill={fill}
         pixel={pixel}
+        loading={loading}
         valueFormatter={(value) => String(value)}
       />
     </ChartCard>
@@ -330,7 +340,7 @@ export function ChartPieSimple({ fill = 'bands', pixel = 2 }: ChartControls) {
 }
 
 /** Pixel donut via pieProps.innerRadius. */
-export function ChartPieDonut({ fill = 'bands', pixel = 2 }: ChartControls) {
+export function ChartPieDonut({ fill = 'bands', pixel = 2, loading = false }: ChartControls) {
   return (
     <ChartCard title="Pixel donut" description="Same wedges with an inner hole.">
       <DunePieChart<ShareSlice>
@@ -343,6 +353,7 @@ export function ChartPieDonut({ fill = 'bands', pixel = 2 }: ChartControls) {
         config={throughputConfig}
         fill={fill}
         pixel={pixel}
+        loading={loading}
         valueFormatter={(value) => String(value)}
         pieProps={{ innerRadius: '45%', outerRadius: '80%' }}
       />
@@ -367,7 +378,7 @@ const RADAR_DATA: RadarRow[] = [
 ];
 
 /** Pixel radar polygons. */
-export function ChartRadarSimple({ fill = 'bands', pixel = 2 }: ChartControls) {
+export function ChartRadarSimple({ fill = 'bands', pixel = 2, loading = false }: ChartControls) {
   return (
     <ChartCard title="Pixel radar" description="Filled spider polygons — crest→depth from the rim.">
       <DuneRadarChart<RadarRow>
@@ -380,6 +391,7 @@ export function ChartRadarSimple({ fill = 'bands', pixel = 2 }: ChartControls) {
         config={throughputConfig}
         fill={fill}
         pixel={pixel}
+        loading={loading}
         valueFormatter={(value) => String(value)}
       />
     </ChartCard>
@@ -387,7 +399,7 @@ export function ChartRadarSimple({ fill = 'bands', pixel = 2 }: ChartControls) {
 }
 
 /** Pixel radial ring arcs. */
-export function ChartRadialSimple({ fill = 'bands', pixel = 2 }: ChartControls) {
+export function ChartRadialSimple({ fill = 'bands', pixel = 2, loading = false }: ChartControls) {
   return (
     <ChartCard title="Pixel radial" description="Concentric ring arcs — value sweeps the angle.">
       <DuneRadialChart<ShareSlice>
@@ -400,6 +412,7 @@ export function ChartRadialSimple({ fill = 'bands', pixel = 2 }: ChartControls) 
         config={throughputConfig}
         fill={fill}
         pixel={pixel}
+        loading={loading}
         valueFormatter={(value) => String(value)}
       />
     </ChartCard>
@@ -407,7 +420,7 @@ export function ChartRadialSimple({ fill = 'bands', pixel = 2 }: ChartControls) 
 }
 
 /** Semi-circle pixel radial. */
-export function ChartRadialSemi({ fill = 'bands', pixel = 2 }: ChartControls) {
+export function ChartRadialSemi({ fill = 'bands', pixel = 2, loading = false }: ChartControls) {
   return (
     <ChartCard title="Pixel radial (semi)" description="Same arcs clipped to a half ring.">
       <DuneRadialChart<ShareSlice>
@@ -420,6 +433,7 @@ export function ChartRadialSemi({ fill = 'bands', pixel = 2 }: ChartControls) {
         config={throughputConfig}
         fill={fill}
         pixel={pixel}
+        loading={loading}
         valueFormatter={(value) => String(value)}
         chartProps={{ startAngle: 180, endAngle: 0, cy: '70%' }}
       />

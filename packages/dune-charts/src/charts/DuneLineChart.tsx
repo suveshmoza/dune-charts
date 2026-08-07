@@ -4,6 +4,7 @@ import {
   Legend,
   Line,
   LineChart,
+  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
@@ -11,11 +12,27 @@ import {
 } from 'recharts';
 
 import { DuneChartContainer } from '../primitives/DuneChartContainer';
+import {
+  DEFAULT_LOADING_MESSAGE,
+  DuneChartLoadingBadge,
+} from '../primitives/DuneChartLoading';
 import { useDuneTheme } from '../provider/DuneChartProvider';
 import type { DuneLineChartProps } from '../types';
 import { usePrefersReducedMotion } from '../utils/reducedMotion';
-import { buildSeriesStyle, getSeriesVar, resolveSeriesBaseColors } from '../utils/series';
+import {
+  buildSeriesStyle,
+  getSeriesVar,
+  resolveCssColor,
+  resolveSeriesBaseColors,
+} from '../utils/series';
 import { buildSeriesList } from './buildSeriesList';
+import {
+  buildLoadingAreaRows,
+  buildLoadingAreaSeriesFromRows,
+  DEFAULT_LOADING_AREA_COUNT,
+  LOADING_AREA_INDEX_KEY,
+  LOADING_AREA_VALUE_KEY,
+} from './chartLoadingBars';
 import { PixelLinePlotLayer } from './PixelLinePlotLayer';
 
 export type { DuneLineChartProps };
@@ -52,6 +69,9 @@ export function DuneLineChart<T extends Record<string, unknown>>({
   title,
   description,
   emptyMessage = DEFAULT_EMPTY_MESSAGE,
+  loading = false,
+  loadingMessage = DEFAULT_LOADING_MESSAGE,
+  loadingIndicator,
   valueFormatter,
   chartProps,
   seriesProps,
@@ -67,6 +87,7 @@ export function DuneLineChart<T extends Record<string, unknown>>({
   const { theme } = useDuneTheme();
   const seriesStyle = buildSeriesStyle(categories, config);
   const [baseColors, setBaseColors] = useState<string[]>([]);
+  const [trackColor, setTrackColor] = useState('#d9d3c8');
   const emptyId = useId();
   const emptyTitleId = title ? `${emptyId}-title` : undefined;
   const emptyDescId = description ? `${emptyId}-description` : undefined;
@@ -74,12 +95,14 @@ export function DuneLineChart<T extends Record<string, unknown>>({
 
   useLayoutEffect(() => {
     const host = containerRef.current;
-    if (host == null || categories.length === 0) {
+    if (host == null) return;
+    setTrackColor(resolveCssColor(host, 'var(--dune-track)'));
+    if (categories.length === 0) {
       setBaseColors([]);
       return;
     }
     setBaseColors(resolveSeriesBaseColors(host, categories.length));
-  }, [categories, config, theme]);
+  }, [categories, config, theme, loading]);
 
   const lineSeries = useMemo(
     () => buildSeriesList(data, categories, config, baseColors, undefined, undefined),
@@ -88,7 +111,25 @@ export function DuneLineChart<T extends Record<string, unknown>>({
   const paintsReady = baseColors.length === categories.length;
   const indexValues = useMemo(() => data.map((row) => row[index]), [data, index]);
 
-  if (data.length === 0) {
+  const loadingPointCount = useMemo(() => {
+    if (data.length > 0) return Math.max(8, Math.min(24, data.length));
+    return DEFAULT_LOADING_AREA_COUNT;
+  }, [data.length]);
+
+  const loadingRows = useMemo(
+    () => buildLoadingAreaRows(loadingPointCount),
+    [loadingPointCount],
+  );
+  const loadingSeries = useMemo(
+    () => buildLoadingAreaSeriesFromRows(loadingRows, trackColor),
+    [loadingRows, trackColor],
+  );
+  const loadingIndexValues = useMemo(
+    () => loadingRows.map((row) => row[LOADING_AREA_INDEX_KEY]),
+    [loadingRows],
+  );
+
+  if (!loading && data.length === 0) {
     const emptyStyle: CSSProperties = {
       ...seriesStyle,
       height: toCssSize(height),
@@ -118,6 +159,62 @@ export function DuneLineChart<T extends Record<string, unknown>>({
         <p id={emptyMessageId} className="dune-chart-empty__message">
           {emptyMessage}
         </p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    const loadingStyle: CSSProperties = {
+      ...seriesStyle,
+      height: toCssSize(height),
+      minHeight: toCssSize(height) ?? 160,
+      position: 'relative',
+    };
+
+    return (
+      <div
+        ref={containerRef}
+        className={['dune-chart-container', 'dune-chart-loading-shell', className]
+          .filter(Boolean)
+          .join(' ')}
+        style={loadingStyle}
+        role="status"
+        aria-busy="true"
+        aria-live="polite"
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={loadingRows}
+            margin={{ top: 12, right: 16, left: 4, bottom: 4 }}
+            accessibilityLayer={false}
+          >
+            <XAxis dataKey={LOADING_AREA_INDEX_KEY} hide />
+            <YAxis hide domain={[0, 100]} width={0} />
+
+            <PixelLinePlotLayer
+              series={loadingSeries}
+              pointCount={loadingRows.length}
+              indexValues={loadingIndexValues}
+              pixel={pixel}
+              shimmer={!prefersReducedMotion}
+            />
+
+            <Line
+              type="stepAfter"
+              dataKey={LOADING_AREA_VALUE_KEY}
+              stroke="transparent"
+              strokeOpacity={0}
+              strokeWidth={2}
+              dot={false}
+              activeDot={false}
+              isAnimationActive={false}
+              legendType="none"
+              tooltipType="none"
+            />
+          </LineChart>
+        </ResponsiveContainer>
+
+        <DuneChartLoadingBadge message={loadingMessage} indicator={loadingIndicator} />
       </div>
     );
   }

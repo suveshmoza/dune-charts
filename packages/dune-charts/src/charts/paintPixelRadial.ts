@@ -20,6 +20,8 @@ export type PaintPixelRadialOptions = {
   fill?: PixelWaveFill;
   /** Unfilled ring remainder (resolved concrete color). */
   trackColor?: string;
+  /** When `false`, skip unfilled track remainder cells (loading skeletons). */
+  paintTracks?: boolean;
   ditherTiles?: DitherTileCache;
 };
 
@@ -131,14 +133,20 @@ export function paintPixelRadial(
   ctx: CanvasRenderingContext2D,
   options: PaintPixelRadialOptions,
 ): void {
-  const { layout, bars, fill = 'bands', trackColor = DEFAULT_TRACK_COLOR } = options;
+  const {
+    layout,
+    bars,
+    fill = 'bands',
+    trackColor = DEFAULT_TRACK_COLOR,
+    paintTracks = true,
+  } = options;
   const { pixel, plotX, plotY, plotW, plotH, cells } = layout;
 
   ctx.clearRect(0, 0, plotW, plotH);
   ctx.imageSmoothingEnabled = false;
 
   const byName = new Map(bars.map((b) => [b.name, b]));
-  const trackBands = trackBandsFromColor(trackColor);
+  const trackBands = paintTracks ? trackBandsFromColor(trackColor) : null;
   const ditherTiles =
     fill === 'dither'
       ? ensureDitherTileCache(barsAsSeries(bars), options.ditherTiles ?? new Map())
@@ -146,6 +154,8 @@ export function paintPixelRadial(
   const patternCache = new Map<string, CanvasPattern | null>();
 
   for (const cell of cells) {
+    if (cell.kind === 'track' && !paintTracks) continue;
+
     const localX = cell.x - plotX;
     const localY = cell.y - plotY;
 
