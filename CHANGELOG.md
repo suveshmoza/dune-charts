@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.1.0
+
+### Breaking
+
+- Compound components are now the primary API (`DuneAreaChart.Area`, `.XAxis`, `.YAxis`, `.Tooltip`, …); the legacy prop-based API (`categories` / `index`) has been removed
+- Removed deprecated exports: `DuneAreaChartProps` and `DUNE_BAND_RAMPS`
+- Removed the deprecated `xScale` option from the bar layout engine (use `categoryScale`)
+- `DuneLineChart` now draws linear segments instead of stepped lines
+
+### Added
+
+- Entrance animations across all charts (area, bar, line, pie, radar, radial), respecting `prefers-reduced-motion`
+- Loading state with pixel skeletons for every chart
+- Horizontal bars in `DuneBarChart`
+- `DuneRadialChart` track color and hit-sector support
+
+### Changed
+
+- Reworked `dither` fill into a continuous 8×8 Bayer mesh with an opaque crest→depth underpaint (no background bleed-through)
+- Standardized `CartesianGrid` styling across area, bar, and line charts
+- Grouped charts by family and extracted a shared rendering core
+
+### Fixed
+
+- Restored horizontal bar painting and removed hover/focus chart borders
+
 ## 0.0.2
 
 - `DuneRadarChart` — pixel polar fill (`bands` | `dither`)

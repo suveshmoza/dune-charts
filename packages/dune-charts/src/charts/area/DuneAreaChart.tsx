@@ -22,11 +22,7 @@ import { DuneChartContainer } from '../../primitives/DuneChartContainer';
 import type { DuneChartSize } from '../../primitives/DuneChartContainer';
 import { DEFAULT_LOADING_MESSAGE, DuneChartLoadingBadge } from '../../primitives/DuneChartLoading';
 import { useDuneTheme } from '../../provider/DuneChartProvider';
-import type {
-  DataKey,
-  DuneAreaChartPassThrough,
-  DuneSeriesConfig,
-} from '../../types';
+import type { DataKey, DuneAreaChartPassThrough, DuneSeriesConfig } from '../../types';
 import { usePrefersReducedMotion } from '../../utils/reducedMotion';
 import {
   buildSeriesStyle,
