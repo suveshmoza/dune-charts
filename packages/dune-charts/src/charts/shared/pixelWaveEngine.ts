@@ -21,7 +21,7 @@ const BAYER_2 = [
 
 /** 8×8 Bayer matrix (values 0–63), derived recursively from BAYER_4. */
 export const BAYER_8: readonly (readonly number[])[] = Array.from({ length: 8 }, (_, y) =>
-  Array.from({ length: 8 }, (_, x) => {
+  Array.from({ length: 8 }, (__, x) => {
     const base = BAYER_4[y >> 1]?.[x >> 1] ?? 0;
     const fine = BAYER_2[y & 1]?.[x & 1] ?? 0;
     return 4 * base + fine;

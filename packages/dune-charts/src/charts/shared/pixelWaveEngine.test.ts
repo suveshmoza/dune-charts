@@ -26,6 +26,8 @@ import {
 
 const BANDS: PixelWaveBands = ['#111111', '#333333', '#555555', '#777777', '#999999'];
 
+const lightnessPct = (css: string) => Number(css.match(/(\d+)%\)$/)?.[1]);
+
 function makeSeries(
   partial: Partial<PixelWaveSeries> & Pick<PixelWaveSeries, 'name' | 'values'>,
 ): PixelWaveSeries {
@@ -112,9 +114,8 @@ describe('dither helpers', () => {
   });
 
   it('ditherLowToneFromColor amount deepens the darkening', () => {
-    const l = (css: string) => Number(css.match(/(\d+)%\)$/)?.[1]);
-    expect(l(ditherLowToneFromColor('#4488cc', 0.75))).toBeLessThan(
-      l(ditherLowToneFromColor('#4488cc', 0.35)),
+    expect(lightnessPct(ditherLowToneFromColor('#4488cc', 0.75))).toBeLessThan(
+      lightnessPct(ditherLowToneFromColor('#4488cc', 0.35)),
     );
   });
 
