@@ -48,11 +48,7 @@ export type {
   DuneSeriesConfig,
 } from './types';
 
-export {
-  DuneAreaChart,
-  type DuneAreaChartProps,
-  type DuneAreaChartAreaProps,
-} from './charts/area/DuneAreaChart';
+export { DuneAreaChart, type DuneAreaChartAreaProps } from './charts/area/DuneAreaChart';
 
 export { DuneBarChart, type DuneBarChartBarProps } from './charts/bar/DuneBarChart';
 
@@ -100,7 +96,6 @@ export {
   bandsFromHue,
   resolveSeriesBands,
   PIXEL_WAVE_FILLS,
-  DUNE_BAND_RAMPS,
   DUNE_SERIES_HUES,
   type PixelWaveBands,
   type PixelWaveFill,

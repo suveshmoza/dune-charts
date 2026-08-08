@@ -212,8 +212,6 @@ export type ComputePixelBarPlotLayoutOptions = {
   indexValues?: readonly unknown[];
   /** Category-axis scale (X for vertical bars, Y for horizontal bars). */
   categoryScale?: PixelWaveXScale;
-  /** @deprecated Alias for `categoryScale`. */
-  xScale?: PixelWaveXScale;
   /** Recharts BarChart layout. Default `horizontal` (vertical bars). */
   layout?: PixelBarChartLayout;
 };
@@ -235,7 +233,7 @@ export function computePixelBarPlotLayout(
 
   const pixel = options.pixel ?? DEFAULT_PIXEL;
   const layout: PixelBarChartLayout = options.layout ?? 'horizontal';
-  const categoryScale = options.categoryScale ?? options.xScale;
+  const categoryScale = options.categoryScale;
   const plotW = Math.max(pixel, snapDown(plot.width, pixel));
   const plotH = Math.max(pixel, snapDown(plot.height, pixel));
 

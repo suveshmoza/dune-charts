@@ -498,8 +498,3 @@ export function computePixelWavePlotLayout(
     pixel,
   };
 }
-
-/** @deprecated Prefer `bandsFromHue` / `resolveSeriesBands`. */
-export const DUNE_BAND_RAMPS: readonly PixelWaveBands[] = DUNE_SERIES_HUES.map((hue) =>
-  bandsFromHue(hue),
-);

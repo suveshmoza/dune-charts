@@ -46,7 +46,7 @@ describe('computePixelBarPlotLayout', () => {
   it('places one group per category with snapped bar width', () => {
     const indexValues = ['a', 'b', 'c'];
     const centers = [20, 60, 100];
-    const xScale = (value: unknown) => {
+    const categoryScale = (value: unknown) => {
       const i = indexValues.indexOf(String(value));
       return i >= 0 ? centers[i] : undefined;
     };
@@ -56,7 +56,7 @@ describe('computePixelBarPlotLayout', () => {
       plot,
       yScale,
       3,
-      { pixel: 4, indexValues, xScale },
+      { pixel: 4, indexValues, categoryScale },
     );
 
     expect(layout).not.toBeNull();

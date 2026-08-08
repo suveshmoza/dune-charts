@@ -25,8 +25,6 @@ import { useDuneTheme } from '../../provider/DuneChartProvider';
 import type {
   DataKey,
   DuneAreaChartPassThrough,
-  DuneAreaSeriesPassThrough,
-  DuneCartesianChartProps,
   DuneSeriesConfig,
 } from '../../types';
 import { usePrefersReducedMotion } from '../../utils/reducedMotion';
@@ -383,79 +381,7 @@ function rewriteAreaSeriesChildren(
   });
 }
 
-/** @deprecated Prefer compound children (`DuneAreaChart.Area`, `.XAxis`, …). */
-export type DuneAreaChartProps<T> = DuneCartesianChartProps<T>;
-
-function isLegacyAreaProps<T extends Record<string, unknown>>(
-  props: DuneAreaChartRootProps<T> | DuneAreaChartProps<T>,
-): props is DuneAreaChartProps<T> {
-  return 'categories' in props && Array.isArray(props.categories);
-}
-
-function DuneAreaChartLegacy<T extends Record<string, unknown>>(props: DuneAreaChartProps<T>) {
-  const {
-    data,
-    categories,
-    index,
-    config,
-    fill,
-    pixel,
-    className,
-    height,
-    title,
-    description,
-    emptyMessage,
-    loading,
-    loadingMessage,
-    loadingIndicator,
-    valueFormatter,
-    chartProps,
-    seriesProps,
-    xAxisProps,
-    yAxisProps,
-    tooltipProps,
-    legendProps,
-    children,
-  } = props;
-
-  return (
-    <DuneAreaChartRoot
-      data={data}
-      config={config}
-      fill={fill}
-      pixel={pixel}
-      className={className}
-      height={height}
-      title={title}
-      description={description}
-      emptyMessage={emptyMessage}
-      loading={loading}
-      loadingMessage={loadingMessage}
-      loadingIndicator={loadingIndicator}
-      valueFormatter={valueFormatter}
-      chartProps={chartProps}
-    >
-      <DuneCartesianGrid />
-      <DuneXAxis dataKey={index} {...xAxisProps} />
-      <DuneYAxis {...yAxisProps} />
-      <DuneTooltip {...tooltipProps} />
-      <DuneLegend {...legendProps} />
-      {categories.map((key) => {
-        const { fill: _rechartsFill, ...seriesRest } = (seriesProps?.[key] ??
-          {}) as DuneAreaSeriesPassThrough & { fill?: string };
-        return <Area key={key} dataKey={key} {...seriesRest} />;
-      })}
-      {children}
-    </DuneAreaChartRoot>
-  );
-}
-
-function DuneAreaChartInner<T extends Record<string, unknown>>(
-  props: DuneAreaChartRootProps<T> | DuneAreaChartProps<T>,
-) {
-  if (isLegacyAreaProps(props)) {
-    return <DuneAreaChartLegacy {...props} />;
-  }
+function DuneAreaChartInner<T extends Record<string, unknown>>(props: DuneAreaChartRootProps<T>) {
   return <DuneAreaChartRoot {...props} />;
 }
 
