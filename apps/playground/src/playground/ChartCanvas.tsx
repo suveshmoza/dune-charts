@@ -238,7 +238,6 @@ export function ChartCanvas({
         >
           <DuneRadarChart.PolarGrid />
           <DuneRadarChart.PolarAngleAxis dataKey="axis" />
-          <DuneRadarChart.PolarRadiusAxis />
           <DuneRadarChart.Tooltip cursor={false} />
           <DuneRadarChart.Legend />
           <DuneRadarChart.Radar dataKey="melange" />
