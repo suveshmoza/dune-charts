@@ -5,7 +5,7 @@ import { clampPixel, toCssSize } from './composition';
 export { clampPixel, toCssSize };
 export { DUNE_DURATION, DUNE_EASE, easeOutCubic } from './chartMotion';
 
-export const DEFAULT_PIXEL = 1;
+export const DEFAULT_PIXEL = 2;
 export const DEFAULT_EMPTY_MESSAGE = 'No data to display';
 
 export function ChartEmptyState({
