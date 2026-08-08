@@ -22,7 +22,7 @@
     "oxfmt": "^0.61.0",
     "oxlint": "^1.76.0",
     "oxlint-tsgolint": "^7.0.2001",
-    "typescript": "^7.0.2"
+    "typescript": "catalog:"
   },
   "nano-staged": {
     "*.{js,jsx,ts,tsx}": "oxlint --fix",

@@ -45,13 +45,13 @@
   "devDependencies": {
     "@testing-library/react": "^16.3.2",
     "@tsdown/css": "^0.22.14",
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.4",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "recharts": "^3.10.1",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "recharts": "catalog:",
     "tsdown": "^0.22.14",
-    "typescript": "^7.0.2",
+    "typescript": "catalog:",
     "vitest": "^4.1.10"
   },
   "peerDependencies": {
